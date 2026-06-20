@@ -1,0 +1,519 @@
+{% extends 'base.html' %}
+{% block title %} Clientes {% endblock %}
+
+{% block content %}
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <h2><i class="bi bi-cupcake me-2"></i>Dulce Explosion</h2>
+        <small>Panel de administración</small>
+    </div>
+    <ul class="sidebar-nav">
+        <li>
+            <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap-fill"></i> Productos</a>
+        </li>
+        <li class="active">
+            <a href="{{ url_for('admin.listar_usuarios') }}"><i class="bi bi-people-fill"></i> Clientes</a>
+        </li>
+        <li>
+            <a href="#"><i class="bi bi-bar-chart-fill"></i> Reportes</a>
+        </li>
+        <li>
+            <a href=""><i class="bi bi-person-circle"></i> Perfil</a>
+        </li>
+        <li style="margin-top: 2rem; border-top: 1px solid #e6f0ff; padding-top: 1rem;">
+            <a href="{{ url_for('auth.logout') }}" style="color: #dc3545;">
+                <i class="bi bi-box-arrow-right" style="color: #dc3545;"></i> Cerrar sesión
+            </a>
+        </li>
+    </ul>
+</nav>
+<main class="main-content">
+    <div class="row g-3 mb-4">
+        <div class="col-md-4 col-6">
+            <div class="card card-shadow p-3 bg-white h-100">
+                <span class="text-muted small text-uppercase" style="font-weight: 600;">Total Usuarios</span>
+                <h3 class="fw-bold mb-0 text-brand">{{ total_usuarios if total_usuarios else 0 }}</h3>
+                <span class="badge bg-primary-soft text-brand mt-1" style="font-weight: 500;">registrados</span>
+            </div>
+        </div>
+        <div class="col-md-4 col-6">
+            <div class="card card-shadow p-3 bg-white h-100">
+                <span class="text-muted small text-uppercase" style="font-weight: 600;">Administradores</span>
+                <h3 class="fw-bold mb-0 text-brand">
+                    {% set admins = [] %}
+                    {% for u in usuarios %}
+                        {% if u.rol.lower() in ['admin', 'administrador'] %}
+                            {% set _ = admins.append(u) %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ admins|length }}
+                </h3>
+                <span class="badge bg-primary-soft text-brand mt-1" style="font-weight: 500;">con acceso total</span>
+            </div>
+        </div>
+        <div class="col-md-4 col-6">
+            <div class="card card-shadow p-3 bg-white h-100">
+                <span class="text-muted small text-uppercase" style="font-weight: 600;">Clientes</span>
+                <h3 class="fw-bold mb-0 text-brand">
+                    {% set clientes = [] %}
+                    {% for u in usuarios %}
+                        {% if u.rol.lower() not in ['admin', 'administrador'] %}
+                            {% set _ = clientes.append(u) %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ clientes|length }}
+                </h3>
+                <span class="badge bg-primary-soft text-brand mt-1" style="font-weight: 500;">usuarios normales</span>
+            </div>
+        </div>
+    </div>
+    <div class="card card-shadow p-4 bg-white">
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+            <div>
+                <h5 class="section-title mb-0"><i class="bi bi-people-fill me-2 text-brand"></i>Lista de usuarios</h5>
+                <span class="text-muted small">todos los usuarios registrados en el sistema</span>
+            </div>
+            <button class="btn btn-success btn-sm" onclick="exportarCSV()">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Exportar CSV
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle table-hover" id="tablaUsuarios">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Rol</th>
+                        <th>Fecha Registro</th>
+                        <th style="width: 120px;" class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if usuarios %}
+                        {% for usuario in usuarios %}
+                        <tr>
+                            <td><span class="fw-semibold">#{{ usuario.id_usuario }}</span></td>
+                            <td>
+                                <span class="fw-semibold">{{ usuario.nombre }}</span>
+                            </td>
+                            <td>{{ usuario.email }}</td>
+                            <td>{{ usuario.telefono or 'No registrado' }}</td>
+                            <td>
+                                {% if usuario.rol.lower() in ['admin', 'administrador'] %}
+                                    <span class="badge bg-primary-soft text-brand">
+                                        <i class="bi bi-shield-check me-1"></i> Administrador
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary">
+                                        <i class="bi bi-person me-1"></i> Cliente
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="text-muted small">
+                                    {% if usuario.fecha_registro %}
+                                        {{ usuario.fecha_registro.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                        No disponible
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="action-icon" onclick="verUsuario({{ usuario.id_usuario }})" title="Ver usuario">
+                                    <i class="bi bi-eye"></i>
+                                </span>
+                                {% if usuario.id_usuario != current_user.id_usuario %}
+                                    <span class="action-icon" onclick="editarUsuario({{ usuario.id_usuario }})" title="Editar usuario">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </span>
+                                    <span class="action-icon" onclick="eliminarUsuario({{ usuario.id_usuario }}, '{{ usuario.nombre }}')" title="Eliminar usuario">
+                                        <i class="bi bi-trash3"></i>
+                                    </span>
+                                {% else %}
+                                    <span class="action-icon" style="color: #b8d1f0; cursor: not-allowed;" title="No puedes editarte/eliminarte a ti mismo">
+                                        <i class="bi bi-pencil-square" style="color: #b8d1f0;"></i>
+                                    </span>
+                                    <span class="action-icon" style="color: #b8d1f0; cursor: not-allowed;" title="No puedes eliminarte a ti mismo">
+                                        <i class="bi bi-trash3" style="color: #b8d1f0;"></i>
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="bi bi-people" style="font-size: 2rem; color: #b8d1f0;"></i>
+                                <p class="text-muted mt-2">No hay usuarios registrados</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between pt-2">
+            <span class="text-muted small">Mostrando {{ usuarios|length if usuarios else 0 }} usuarios</span>
+        </div>
+    </div>
+    <div class="footer-note d-flex flex-wrap justify-content-between align-items-center">
+        <span><i class="bi bi-c-circle me-1"></i> 2026 Dulce Explosion · Administración</span>
+        <span class="text-muted">v2.4.1 · <i class="bi bi-shield-check"></i> conexión segura</span>
+    </div>
+</main>
+
+<div class="modal fade" id="verUsuarioModal" tabindex="-1" aria-labelledby="verUsuarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="verUsuarioModalLabel">
+                    <i class="bi bi-eye me-2 text-brand"></i>Detalle del usuario
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <div class="text-center mb-3">
+                            <div class="bg-primary-soft rounded-circle d-inline-flex p-3" style="width: 80px; height: 80px; align-items: center; justify-content: center;">
+                                <i class="bi bi-person-circle" style="font-size: 3rem; color: #0a4b8c;"></i>
+                            </div>
+                        </div>
+                        <div id="verUsuarioContenido">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Nombre completo</label>
+                                    <p class="fw-semibold" id="verNombre">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Correo electrónico</label>
+                                    <p class="fw-semibold" id="verEmail">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Teléfono</label>
+                                    <p class="fw-semibold" id="verTelefono">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Rol</label>
+                                    <p class="fw-semibold" id="verRol">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small">ID de usuario</label>
+                                    <p class="fw-semibold" id="verId">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Fecha de registro</label>
+                                    <p class="fw-semibold" id="verFechaRegistro">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-brand-outline" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-brand" onclick="editarUsuarioDesdeVer()">Editar usuario</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarUsuarioModalLabel">
+                    <i class="bi bi-pencil-square me-2 text-brand"></i>Editar usuario
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarUsuario">
+                <div class="modal-body">
+                    <input type="hidden" id="editarUsuarioId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="editarNombre" class="form-label">Nombre completo <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="editarUsuarioNombre" name="nombre" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editarEmail" class="form-label">Correo electrónico <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="editarUsuarioEmail" name="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editarTelefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="editarUsuarioTelefono" name="telefono" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editarRol" class="form-label">Rol <span class="text-danger">*</span></label>
+                            <select class="form-select" id="editarUsuarioRol" name="rol" required>
+                                <option value="cliente">Cliente</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-brand-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-brand" id="btnGuardarUsuario">
+                        <i class="bi bi-save me-1"></i> Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="eliminarUsuarioModal" tabindex="-1" aria-labelledby="eliminarUsuarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eliminarUsuarioModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2 text-danger"></i>Eliminar usuario
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-3">
+                <i class="bi bi-person-x display-4 text-danger mb-3"></i>
+                <h6 class="fw-bold">¿Estás seguro?</h6>
+                <p class="text-muted small">Esta acción eliminará permanentemente al usuario <strong id="eliminarUsuarioNombre">-</strong>.</p>
+                <p class="text-muted small text-danger"><i class="bi bi-exclamation-circle"></i> También se eliminarán todos sus productos asociados.</p>
+                <input type="hidden" id="eliminarUsuarioId">
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-brand-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="confirmarEliminarUsuario()">
+                    <i class="bi bi-trash3 me-1"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function exportarCSV() {
+        const usuarios = [
+            {% for usuario in usuarios %}
+            {
+                id: {{ usuario.id_usuario }},
+                nombre: "{{ usuario.nombre }}",
+                email: "{{ usuario.email }}",
+                telefono: "{{ usuario.telefono or 'No registrado' }}",
+                rol: "{{ 'Administrador' if usuario.rol.lower() in ['admin', 'administrador'] else 'Cliente' }}",
+                fecha_registro: "{{ usuario.fecha_registro.strftime('%d/%m/%Y') if usuario.fecha_registro else 'No disponible' }}"
+            },
+            {% endfor %}
+        ];
+        const encabezados = ['ID', 'Nombre', 'Email', 'Teléfono', 'Rol', 'Fecha Registro'];
+        let contenidoCSV = '';
+        const BOM = '\uFEFF';
+        contenidoCSV += encabezados.join(';') + '\n';
+        usuarios.forEach(usuario => {
+            const fila = [
+                usuario.id,
+                `"${usuario.nombre}"`,
+                `"${usuario.email}"`,
+                `"${usuario.telefono}"`,
+                `"${usuario.rol}"`,
+                `"${usuario.fecha_registro}"`
+            ];
+            contenidoCSV += fila.join(';') + '\n';
+        });
+        const totalUsuarios = usuarios.length;
+        const admins = usuarios.filter(u => u.rol === 'Administrador').length;
+        const clientes = usuarios.filter(u => u.rol === 'Cliente').length;
+        contenidoCSV += '\n';
+        contenidoCSV += `"Total Usuarios: ${totalUsuarios}";;;;\n`;
+        contenidoCSV += `"Administradores: ${admins}";;;;\n`;
+        contenidoCSV += `"Clientes: ${clientes}";;;;\n`;
+        contenidoCSV += `"Fecha de exportación: ${new Date().toLocaleString()}";;;;`;
+        const blob = new Blob([BOM + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `usuarios_dulce_explosion_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+    let verUsuarioId = null;
+    function verUsuario(id) {
+        verUsuarioId = id;
+        fetch('{{ url_for("admin.ver_usuario", id_usuario=0) }}'.replace('0', id))
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const u = data.usuario;
+                    document.getElementById('verNombre').textContent = u.nombre;
+                    document.getElementById('verEmail').textContent = u.email;
+                    document.getElementById('verTelefono').textContent = u.telefono || 'No registrado';
+                    document.getElementById('verRol').textContent = u.rol.charAt(0).toUpperCase() + u.rol.slice(1);
+                    document.getElementById('verId').textContent = u.id_usuario;
+                    document.getElementById('verFechaRegistro').textContent = u.fecha_registro || 'No disponible';
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('verUsuarioModal'));
+                    modal.show();
+                } else {
+                    alert(data.message || 'Error al cargar el usuario');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cargar el usuario');
+            });
+    }
+
+    function editarUsuarioDesdeVer() {
+        if (verUsuarioId) {
+            document.getElementById('verUsuarioModal').querySelector('.btn-close').click();
+            editarUsuario(verUsuarioId);
+        }
+    }
+
+    function editarUsuario(id) {
+        fetch('{{ url_for("admin.ver_usuario", id_usuario=0) }}'.replace('0', id))
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const u = data.usuario;
+                    document.getElementById('editarUsuarioId').value = u.id_usuario;
+                    document.getElementById('editarUsuarioNombre').value = u.nombre;
+                    document.getElementById('editarUsuarioEmail').value = u.email;
+                    document.getElementById('editarUsuarioTelefono').value = u.telefono || '';
+                    document.getElementById('editarUsuarioRol').value = u.rol;
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('editarUsuarioModal'));
+                    modal.show();
+                } else {
+                    alert(data.message || 'Error al cargar el usuario');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cargar el usuario para editar');
+            });
+    }
+
+    document.getElementById('formEditarUsuario').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('editarUsuarioId').value;
+        const nombre = document.getElementById('editarUsuarioNombre').value.trim();
+        const email = document.getElementById('editarUsuarioEmail').value.trim();
+        const telefono = document.getElementById('editarUsuarioTelefono').value.trim();
+        const rol = document.getElementById('editarUsuarioRol').value;
+        const submitBtn = document.getElementById('btnGuardarUsuario');
+        
+        if (!nombre || !email || !telefono || !rol) {
+            alert('Por favor, completa todos los campos obligatorios.');
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...';
+        
+        fetch('{{ url_for("admin.editar_usuario", id_usuario=0) }}'.replace('0', id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'nombre': nombre,
+                'email': email,
+                'telefono': telefono,
+                'rol': rol
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Usuario actualizado exitosamente');
+                location.reload();
+            } else {
+                alert(data.message || 'Error al actualizar el usuario');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-save me-1"></i> Guardar cambios';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al actualizar el usuario');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-save me-1"></i> Guardar cambios';
+        });
+    });
+    let eliminarUsuarioId = null;
+
+    function eliminarUsuario(id, nombre) {
+        eliminarUsuarioId = id;
+        document.getElementById('eliminarUsuarioNombre').textContent = nombre;
+        document.getElementById('eliminarUsuarioId').value = id;
+        const modal = new bootstrap.Modal(document.getElementById('eliminarUsuarioModal'));
+        modal.show();
+    }
+
+    function confirmarEliminarUsuario() {
+        const id = document.getElementById('eliminarUsuarioId').value;
+        const submitBtn = document.querySelector('#eliminarUsuarioModal .btn-danger');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Eliminando...';
+        
+        fetch('{{ url_for("admin.eliminar_usuario", id_usuario=0) }}'.replace('0', id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Usuario eliminado exitosamente');
+                location.reload();
+            } else {
+                alert(data.message || 'Error al eliminar el usuario');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> Eliminar';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar el usuario');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> Eliminar';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggleBtn = document.getElementById('sidebarToggle');
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+        }
+
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 992) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

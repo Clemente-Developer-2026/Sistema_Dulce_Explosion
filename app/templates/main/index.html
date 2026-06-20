@@ -1,0 +1,553 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <section class="hero-section" id="inicio">
+        <div class="overlay"></div>
+        <div class="hero-content">
+            <h1>Bienvenido a <br><span class="highlight">Dulce Explosion</span></h1>
+            <p>
+                Descubre el sabor de la felicidad en cada bocado. Realiza tus pedidos de manera fácil y rápida,
+                y recibe los mejores postres y pasteles directamente en tu hogar.
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+                {% if current_user.is_authenticated %}
+                    {% if current_user.rol.lower() in ['admin', 'administrador'] %}
+                        <a href="{{ url_for('main.administracion') }}" class="btn btn-brand-light">
+                            <i class="bi bi-speedometer2 me-2"></i> Ir al Dashboard
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('main.pedidos') }}" class="btn btn-brand-light">
+                            <i class="bi bi-cart-fill me-2"></i> Ver Productos
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <button class="btn btn-brand-light" data-bs-toggle="modal" data-bs-target="#loginModal">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión
+                    </button>
+                    <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#registroModal">
+                        <i class="bi bi-person-plus me-2"></i> Crear cuenta
+                    </button>
+                {% endif %}
+            </div>
+            {% if not current_user.is_authenticated %}
+                <div class="mt-4">
+                    <span class="text-white-50">¿Ya tienes cuenta? </span>
+                    <a class="link-light" data-bs-toggle="modal" data-bs-target="#loginModal">Inicia sesión aquí</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="features-section" id="features">
+        <div class="overlay"></div>
+        <div class="features-content">
+            <div class="text-center mb-5">
+                <h2 class="section-title">¿Por qué elegir <span class="text-brand">Dulce Explosion</span>?</h2>
+                <p class="section-subtitle">Calidad, sabor y servicio que endulzan tu vida</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="icon-circle">
+                            <i class="bi bi-cupcake"></i>
+                        </div>
+                        <h5>Productos Frescos</h5>
+                        <p>Elaboramos cada día con ingredientes de la mejor calidad para garantizar el sabor y frescura que mereces.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="icon-circle">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                        <h5>Pedidos a Domicilio</h5>
+                        <p>Realiza tu pedido desde casa y recíbelo en la puerta de tu hogar. Rápido, seguro y con el mejor servicio.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="icon-circle">
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <h5>Calidad Garantizada</h5>
+                        <p>Más de 500 clientes satisfechos avalan nuestra calidad. Cada producto está hecho con amor y dedicación.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section" id="contacto">
+        <div class="overlay"></div>
+        <div class="cta-content">
+            <h2>¡Endulza tu día con nosotros!</h2>
+            <p>Regístrate ahora y comienza a disfrutar de los postres más deliciosos de la ciudad. 
+            Promociones exclusivas para nuevos clientes.</p>
+            {% if current_user.is_authenticated %}
+                {% if current_user.rol.lower() in ['admin', 'administrador'] %}
+                    <a href="{{ url_for('main.administracion') }}" class="btn btn-brand-light">
+                        <i class="bi bi-speedometer2 me-2"></i> Ir al Dashboard
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('main.pedidos') }}" class="btn btn-brand-light">
+                        <i class="bi bi-cart-fill me-2"></i> Hacer un pedido
+                    </a>
+                {% endif %}
+            {% else %}
+                <button class="btn btn-brand-light" data-bs-toggle="modal" data-bs-target="#registroModal">
+                    <i class="bi bi-person-plus me-2"></i> Crear cuenta ahora
+                </button>
+                <div class="mt-3">
+                    <span class="text-white-50">¿Ya eres cliente? </span>
+                    <a class="link-light" data-bs-toggle="modal" data-bs-target="#loginModal">Inicia sesión</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginModalLabel">
+                        <i class="bi bi-box-arrow-in-right me-2 text-brand"></i>Iniciar sesión
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary-soft rounded-circle d-inline-flex p-3" style="width: 70px; height: 70px; align-items: center; justify-content: center;">
+                            <i class="bi bi-person-circle" style="font-size: 2.5rem; color: #0a4b8c;"></i>
+                        </div>
+                        <p class="text-muted small mt-2">Accede a tu cuenta para realizar tus pedidos</p>
+                    </div>
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="loginEmail" class="form-label">Correo electrónico</label>
+                            <div class="input-group-position">
+                                <input type="email" class="form-control" id="loginEmail" placeholder="cliente@gmail.com" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginPassword" class="form-label">Contraseña</label>
+                            <div class="input-group-position">
+                                <input type="password" class="form-control" id="loginPassword" placeholder="••••••••" required>
+                                <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="rememberMe">
+                                <label class="form-check-label small text-muted" for="rememberMe">Recordarme</label>
+                            </div>
+                            <a href="#" class="text-muted small" style="text-decoration: none;">¿Olvidaste tu contraseña?</a>
+                        </div>
+                        <button type="submit" class="btn btn-brand w-100" id="loginBtn">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión
+                        </button>
+                    </form>
+                    <div class="modal-divider">
+                        <span>o</span>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-muted small mb-0">
+                            ¿No tienes cuenta? 
+                            <a class="link-registro" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#registroModal">Crear cuenta aquí</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="registroModal" tabindex="-1" aria-labelledby="registroModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="registroModalLabel">
+                        <i class="bi bi-person-plus me-2 text-brand"></i>Crear cuenta
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary-soft rounded-circle d-inline-flex p-3" style="width: 70px; height: 70px; align-items: center; justify-content: center;">
+                            <i class="bi bi-person-plus" style="font-size: 2.5rem; color: #0a4b8c;"></i>
+                        </div>
+                        <p class="text-muted small mt-2">Crea tu cuenta y comienza a disfrutar de nuestros deliciosos productos</p>
+                    </div>
+                    <form id="registroForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="regNombre" class="form-label">Nombre completo <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="regNombre" placeholder="Ej: Ana López" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="regEmail" class="form-label">Correo electrónico <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="regEmail" placeholder="cliente@gmail.com" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="regPassword" class="form-label">Contraseña <span class="text-danger">*</span></label>
+                                <div class="input-group-position">
+                                    <input type="password" class="form-control" id="regPassword" placeholder="Mínimo 8 caracteres" required minlength="8">
+                                    <button type="button" class="password-toggle" onclick="togglePassword('regPassword', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text small text-muted">La contraseña debe tener al menos 8 caracteres</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="regConfirmPassword" class="form-label">Confirmar contraseña <span class="text-danger">*</span></label>
+                                <div class="input-group-position">
+                                    <input type="password" class="form-control" id="regConfirmPassword" placeholder="Repite la contraseña" required>
+                                    <button type="button" class="password-toggle" onclick="togglePassword('regConfirmPassword', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="regTelefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="regTelefono" placeholder="+591 73042633" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="regRol" class="form-label">Tipo de cuenta <span class="text-danger">*</span></label>
+                                <select class="form-select" id="regRol" required>
+                                    <option value="cliente">Cliente</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                                <div class="form-text small text-muted">Selecciona el tipo de cuenta que deseas crear</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terminos" required>
+                                    <label class="form-check-label small text-muted" for="terminos">
+                                        Acepto los <a href="#" class="text-brand">términos y condiciones</a> y la 
+                                        <a href="#" class="text-brand">política de privacidad</a> <span class="text-danger">*</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-brand w-100" id="registroBtn">
+                                <i class="bi bi-person-plus me-2"></i> Crear cuenta
+                            </button>
+                        </div>
+                    </form>
+                    <div class="modal-divider">
+                        <span>o</span>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-muted small mb-0">
+                            ¿Ya tienes cuenta? 
+                            <a class="link-registro" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#loginModal">Inicia sesión aquí</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmacionModal" tabindex="-1" aria-labelledby="confirmacionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmacionModalLabel">
+                        <i class="bi bi-check-circle-fill me-2 text-success"></i>¡Bienvenido!
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                    <h6 class="fw-bold mt-3" id="confirmacionMensaje">¡Bienvenido a Dulce Explosion!</h6>
+                    <p class="text-muted small" id="confirmacionDetalle">Redirigiendo al catálogo de productos...</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button class="btn btn-brand btn-sm" data-bs-dismiss="modal">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="modal fade" id="flashModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="flashModalLabel">
+                                {% for category, message in messages %}
+                                    {% if category == 'success' %}
+                                        <i class="bi bi-check-circle-fill me-2 text-success"></i>¡Éxito!
+                                    {% elif category == 'error' %}
+                                        <i class="bi bi-exclamation-circle-fill me-2 text-danger"></i>Error
+                                    {% elif category == 'info' %}
+                                        <i class="bi bi-info-circle-fill me-2 text-info"></i>Información
+                                    {% else %}
+                                        <i class="bi bi-bell-fill me-2 text-warning"></i>Aviso
+                                    {% endif %}
+                                {% endfor %}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center py-4">
+                            {% for category, message in messages %}
+                                <p class="mb-0">{{ message }}</p>
+                            {% endfor %}
+                        </div>
+                        <div class="modal-footer justify-content-center">
+                            <button class="btn btn-brand btn-sm" data-bs-dismiss="modal">Entendido</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <script>
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashModal = document.getElementById('flashModal');
+            if (flashModal) {
+                const modal = new bootstrap.Modal(flashModal);
+                modal.show();
+                setTimeout(() => {
+                    modal.hide();
+                }, 3000);
+            }
+
+        });
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                const remember = document.getElementById('rememberMe').checked;
+                const submitBtn = document.getElementById('loginBtn');
+                const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                if (!email || !password) {
+                    alert('Por favor, ingresa tu email y contraseña.');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Iniciando sesión...';
+                
+                fetch('{{ url_for("auth.api_login") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password, remember })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Error en el servidor');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        if (loginModal) loginModal.hide();
+                        
+                        mostrarConfirmacion(
+                            `¡Bienvenido ${data.usuario.nombre}!`,
+                            `Redirigiendo al panel de ${data.usuario.tipo}...`
+                        );
+
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 1500);
+                    } else {
+                        alert(data.message || 'Credenciales incorrectas');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(error.message || 'Error al conectar con el servidor. Por favor, intenta nuevamente.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión';
+                });
+            });
+        }
+
+        const registroForm = document.getElementById('registroForm');
+        if (registroForm) {
+            registroForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const nombre = document.getElementById('regNombre').value.trim();
+                const email = document.getElementById('regEmail').value.trim();
+                const telefono = document.getElementById('regTelefono').value.trim();
+                const direccion = document.getElementById('regDireccion').value.trim();
+                const password = document.getElementById('regPassword').value;
+                const confirmPassword = document.getElementById('regConfirmPassword').value;
+                const rol = document.getElementById('regRol').value;
+                const terminos = document.getElementById('terminos').checked;
+                const submitBtn = document.getElementById('registroBtn');
+                const registroModal = bootstrap.Modal.getInstance(document.getElementById('registroModal'));
+                if (!nombre || !email || !telefono || !password) {
+                    alert('Por favor, completa todos los campos obligatorios (*).');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    alert('Las contraseñas no coinciden. Por favor, verifica.');
+                    return;
+                }
+                
+                if (password.length < 8) {
+                    alert('La contraseña debe tener al menos 8 caracteres.');
+                    return;
+                }
+                
+                if (!terminos) {
+                    alert('Debes aceptar los términos y condiciones para registrarte.');
+                    return;
+                }
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Creando cuenta...';
+                
+                fetch('{{ url_for("auth.api_registro") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        nombre, 
+                        email, 
+                        telefono, 
+                        direccion, 
+                        password,
+                        rol: rol
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Error en el servidor');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        if (registroModal) registroModal.hide();
+                        mostrarConfirmacion(
+                            `¡Registro exitoso!`,
+                            `Bienvenido ${data.usuario.nombre}, tu cuenta ha sido creada correctamente.`
+                        );
+                        document.getElementById('registroForm').reset();
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 2000);
+                    } else {
+                        alert(data.message || 'Error al registrar usuario.');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i> Crear cuenta';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(error.message || 'Error al conectar con el servidor. Por favor, intenta nuevamente.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i> Crear cuenta';
+                });
+            });
+        }
+        function mostrarConfirmacion(titulo, mensaje) {
+            const confirmModalEl = document.getElementById('confirmacionModal');
+            if (confirmModalEl) {
+                document.getElementById('confirmacionMensaje').textContent = titulo;
+                document.getElementById('confirmacionDetalle').textContent = mensaje;
+                const confirmModal = new bootstrap.Modal(confirmModalEl);
+                confirmModal.show();
+            }
+        }
+
+        const regPassword = document.getElementById('regPassword');
+        const regConfirmPassword = document.getElementById('regConfirmPassword');
+
+        if (regConfirmPassword) {
+            regConfirmPassword.addEventListener('input', function() {
+                const password = regPassword.value;
+                const confirm = this.value;
+                if (password && confirm && password !== confirm) {
+                    this.style.borderColor = '#dc3545';
+                    this.style.boxShadow = '0 0 0 3px rgba(220,53,69,0.15)';
+                } else {
+                    this.style.borderColor = '#d8e6fa';
+                    this.style.boxShadow = 'none';
+                }
+            });
+        }
+
+        if (regPassword) {
+            regPassword.addEventListener('input', function() {
+                const confirm = regConfirmPassword;
+                if (confirm && confirm.value && this.value !== confirm.value) {
+                    confirm.style.borderColor = '#dc3545';
+                    confirm.style.boxShadow = '0 0 0 3px rgba(220,53,69,0.15)';
+                } else if (confirm && confirm.value) {
+                    confirm.style.borderColor = '#d8e6fa';
+                    confirm.style.boxShadow = 'none';
+                }
+            });
+        }
+
+        let abrirLogin = false;
+
+        document.addEventListener('hidden.bs.modal', function(event) {
+            if (event.target.id === 'registroModal' && abrirLogin) {
+                const loginModalEl = document.getElementById('loginModal');
+                if (loginModalEl) {
+                    const loginModal = new bootstrap.Modal(loginModalEl);
+                    loginModal.show();
+                    abrirLogin = false;
+                }
+            }
+        });
+
+        const linkRegistro = document.querySelector('#registroModal .link-registro');
+        if (linkRegistro) {
+            linkRegistro.addEventListener('click', function(e) {
+                abrirLogin = true;
+            });
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modales = document.querySelectorAll('.modal.show');
+                modales.forEach(modal => {
+                    const instance = bootstrap.Modal.getInstance(modal);
+                    if (instance) instance.hide();
+                });
+            }
+        });
+
+
+        function redirigirUsuario(url) {
+            window.location.href = url;
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,1092 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <h2><i class="bi bi-cupcake me-2"></i>Dulce Explosion</h2>
+        <small>Panel de administración</small>
+    </div>
+    <ul class="sidebar-nav">
+        <li class="active">
+            <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap-fill"></i> Productos</a>
+        </li>
+        <li>
+            <a href="{{ url_for('admin.listar_usuarios') }}"><i class="bi bi-people-fill"></i> Clientes</a>
+        </li>
+        <li>
+            <a href=""><i class="bi bi-bar-chart-fill"></i> Reportes</a>
+        </li>
+        <li>
+            <a href=""><i class="bi bi-person-circle"></i> Perfil</a>
+        </li>
+        <li style="margin-top: 2rem; border-top: 1px solid #e6f0ff; padding-top: 1rem;">
+            <a href="{{ url_for('auth.logout') }}" style="color: #dc3545;">
+                <i class="bi bi-box-arrow-right" style="color: #dc3545;"></i> Cerrar sesión
+            </a>
+        </li>
+    </ul>
+</nav>
+<main class="main-content">
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="card card-shadow p-3 bg-white h-100">
+                <span class="text-muted small text-uppercase" style="font-weight: 600;">Productos</span>
+                <h3 class="fw-bold mb-0 text-brand" id="totalProductos">{{ total_productos if total_productos else 0 }}</h3>
+                <span class="badge bg-primary-soft text-brand mt-1" style="font-weight: 500;"><i class="bi bi-arrow-up-short"></i> Total</span>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card card-shadow p-3 bg-white h-100">
+                <span class="text-muted small text-uppercase" style="font-weight: 600;">Categorías</span>
+                <h3 class="fw-bold mb-0 text-brand" id="totalCategorias">{{ total_categorias if total_categorias else 0 }}</h3>
+                <span class="badge bg-primary-soft text-brand mt-1" style="font-weight: 500;">activas</span>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card card-shadow p-3 bg-white h-100">
+                <span class="text-muted small text-uppercase" style="font-weight: 600;">Usuarios</span>
+                <h3 class="fw-bold mb-0 text-brand" id="totalUsuarios">{{ total_usuarios if total_usuarios else 0 }}</h3>
+                <span class="badge bg-primary-soft text-brand mt-1" style="font-weight: 500;">registrados</span>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card card-shadow p-3 bg-white h-100">
+                <span class="text-muted small text-uppercase" style="font-weight: 600;">Admin</span>
+                <h3 class="fw-bold mb-0 text-brand">{{ current_user.nombre }}</h3>
+                <span class="badge bg-primary-soft text-brand mt-1" style="font-weight: 500;"><i class="bi bi-person-check-fill"></i> Conectado</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-shadow p-4 bg-white">
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+            <div>
+                <h5 class="section-title mb-0"><i class="bi bi-grid-3x3-gap-fill me-2 text-brand"></i>Catálogo de productos</h5>
+                <span class="text-muted small">gestión de artículos · <span id="totalProductosSpan">{{ productos|length if productos else 0 }}</span> productos</span>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-brand-outline btn-sm mt-2 mt-sm-0" data-bs-toggle="modal" data-bs-target="#nuevaCategoriaModal">
+                    <i class="bi bi-tag me-1"></i> Nueva categoría
+                </button>
+                <button class="btn btn-brand btn-sm mt-2 mt-sm-0" data-bs-toggle="modal" data-bs-target="#nuevoProductoModal">
+                    <i class="bi bi-plus-lg me-1"></i> Nuevo producto
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-3 align-items-end">
+            <div class="col-md-3 col-6">
+                <label class="form-label small fw-semibold text-muted">Buscar</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0" style="border-radius: 12px 0 0 12px;"><i class="bi bi-search text-brand"></i></span>
+                    <input type="text" class="form-control" id="buscarProducto" placeholder="Nombre o producto" style="border-left: none; border-radius: 0 12px 12px 0;" onkeyup="filtrarProductos()">
+                </div>
+            </div>
+            <div class="col-md-2 col-6">
+                <label class="form-label small fw-semibold text-muted">Categoría</label>
+                <select class="form-select" id="filtroCategoria" onchange="filtrarProductos()">
+                    <option value="todos">Todas</option>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.categoria }}">{{ categoria.categoria }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 col-6">
+                <label class="form-label small fw-semibold text-muted">Stock</label>
+                <select class="form-select" id="filtroStock" onchange="filtrarProductos()">
+                    <option value="todos">Todos</option>
+                    <option value="stock">Con stock</option>
+                    <option value="sin-stock">Sin stock</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-6 d-flex justify-content-md-end">
+                <button class="btn btn-outline-brand btn-sm w-100" onclick="limpiarFiltros()"><i class="bi bi-arrow-counterclockwise me-1"></i> Limpiar</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle table-hover" id="tablaProductos">
+                <thead>
+                    <tr>
+                        <th style="width: 90px;">Imagen</th>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th style="width: 50px;">ID Usuario</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if productos %}
+                        {% for producto in productos %}
+                        <tr class="producto-fila" data-nombre="{{ producto.producto.lower() }}" data-categoria="{{ producto.categoria.categoria if producto.categoria else '' }}" data-stock="{{ producto.stock }}">
+                            <td>
+                                {% if producto.imagenes %}
+                                    <img src="{{ get_image_url(producto.imagenes[0].imagen) }}" alt="{{ producto.producto }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 12px;">
+                                {% else %}
+                                    <div class="img-placeholder">
+                                        <i class="bi bi-image"></i>
+                                        <span>vacío</span>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fw-semibold">{{ producto.producto }}</span><br>
+                                <span class="text-muted small">ID: {{ producto.id_producto }}</span>
+                            </td>
+                            <td>
+                                {% if producto.categoria %}
+                                    <span class="badge bg-primary-soft text-brand">{{ producto.categoria.categoria }}</span>
+                                {% else %}
+                                    <span class="text-muted small">Sin categoría</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>${{ "%.2f"|format(producto.precio) }}</strong></td>
+                            <td>
+                                {% if producto.stock > 0 %}
+                                    <span class="badge bg-success-subtle text-success">{{ producto.stock }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="text-muted small">{{ producto.id_usuario }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="action-icon" onclick="verProducto({{ producto.id_producto }})" title="Ver producto"><i class="bi bi-eye"></i></span>
+                                <span class="action-icon" onclick="editarProducto({{ producto.id_producto }})" title="Editar producto"><i class="bi bi-pencil-square"></i></span>
+                                <span class="action-icon" onclick="eliminarProducto({{ producto.id_producto }}, '{{ producto.producto }}')" title="Eliminar producto"><i class="bi bi-trash3"></i></span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="bi bi-inbox" style="font-size: 2rem; color: #b8d1f0;"></i>
+                                <p class="text-muted mt-2">No hay productos registrados</p>
+                                <button class="btn btn-brand btn-sm" data-bs-toggle="modal" data-bs-target="#nuevoProductoModal">
+                                    <i class="bi bi-plus-lg me-1"></i> Crear primer producto
+                                </button>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between pt-2">
+            <span class="text-muted small">Mostrando <span id="totalMostrados">{{ productos|length if productos else 0 }}</span> de {{ productos|length if productos else 0 }} productos</span>
+        </div>
+    </div>
+
+    <div class="card card-shadow p-4 bg-white mt-4" id="categorias">
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+            <div>
+                <h5 class="section-title mb-0"><i class="bi bi-tags-fill me-2 text-brand"></i>Lista de categorías</h5>
+                <span class="text-muted small">gestión de categorías · <span id="totalCategoriasSpan">{{ categorias|length if categorias else 0 }}</span> categorías</span>
+            </div>
+            <button class="btn btn-brand btn-sm mt-2 mt-sm-0" data-bs-toggle="modal" data-bs-target="#nuevaCategoriaModal">
+                <i class="bi bi-plus-lg me-1"></i> Nueva categoría
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle table-hover" id="tablaCategorias">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>Nombre</th>
+                        <th style="width: 200px;">Productos asociados</th>
+                        <th style="width: 150px;" class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if categorias %}
+                        {% for categoria in categorias %}
+                        <tr class="categoria-fila" data-id="{{ categoria.id_categoria }}">
+                            <td><span class="fw-semibold">#{{ categoria.id_categoria }}</span></td>
+                            <td>
+                                <span class="fw-semibold">{{ categoria.categoria }}</span>
+                            </td>
+                            <td>
+                                {% set total_prod = categoria.productos|length if categoria.productos else 0 %}
+                                {% if total_prod == 0 %}
+                                    <span class="badge bg-secondary-subtle text-secondary">
+                                        <i class="bi bi-box me-1"></i> Sin productos
+                                    </span>
+                                {% elif total_prod <= 3 %}
+                                    <span class="badge bg-success-subtle text-success">
+                                        <i class="bi bi-box-seam me-1"></i> {{ total_prod }} productos
+                                    </span>
+                                {% elif total_prod <= 10 %}
+                                    <span class="badge bg-warning-subtle text-warning">
+                                        <i class="bi bi-box-seam me-1"></i> {{ total_prod }} productos
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-primary-soft text-brand">
+                                        <i class="bi bi-box-seam me-1"></i> {{ total_prod }} productos
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="action-icon" onclick="editarCategoria({{ categoria.id_categoria }}, '{{ categoria.categoria }}')" title="Editar categoría">
+                                    <i class="bi bi-pencil-square"></i>
+                                </span>
+                                {% if categoria.productos|length == 0 %}
+                                    <span class="action-icon" onclick="eliminarCategoria({{ categoria.id_categoria }}, '{{ categoria.categoria }}')" title="Eliminar categoría">
+                                        <i class="bi bi-trash3"></i>
+                                    </span>
+                                {% else %}
+                                    <span class="action-icon" style="color: #b8d1f0; cursor: not-allowed;" title="No se puede eliminar porque tiene {{ total_prod }} productos asociados">
+                                        <i class="bi bi-trash3"></i>
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4">
+                                <i class="bi bi-tags" style="font-size: 2rem; color: #b8d1f0;"></i>
+                                <p class="text-muted mt-2">No hay categorías registradas</p>
+                                <button class="btn btn-brand btn-sm" data-bs-toggle="modal" data-bs-target="#nuevaCategoriaModal">
+                                    <i class="bi bi-plus-lg me-1"></i> Crear primera categoría
+                                </button>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card card-shadow p-4 bg-white mt-4">
+        <div class="row g-4 align-items-center">
+            <div class="col-md-7">
+                <h5 class="section-title"><i class="bi bi-upload me-2 text-brand"></i>Carga de imágenes</h5>
+                <p class="text-muted small mb-0">Selecciona un producto y asigna la imagen desde tu equipo.</p>
+                <div class="mt-2 d-flex flex-wrap gap-2">
+                    <span class="badge bg-primary-soft text-brand p-2"><i class="bi bi-check-circle-fill me-1"></i> Formatos: JPG, PNG, WEBP</span>
+                    <span class="badge bg-primary-soft text-brand p-2"><i class="bi bi-check-circle-fill me-1"></i> Máx. 2MB</span>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <form id="formSubirImagen" enctype="multipart/form-data">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <select class="form-select form-select-sm" id="selectProductoImagen" required>
+                                <option value="">Seleccionar producto</option>
+                                {% for producto in productos %}
+                                <option value="{{ producto.id_producto }}">{{ producto.producto }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <input type="file" class="form-control form-control-sm" id="inputImagen" accept="image/*" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-brand btn-sm w-100 mt-2"><i class="bi bi-cloud-upload me-1"></i> Subir imagen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note d-flex flex-wrap justify-content-between align-items-center">
+        <span><i class="bi bi-c-circle me-1"></i> 2026 Dulce Explosion · Administración</span>
+        <span class="text-muted">v2.4.1 · <i class="bi bi-shield-check"></i> conexión segura</span>
+    </div>
+</main>
+
+<div class="modal fade" id="nuevaCategoriaModal" tabindex="-1" aria-labelledby="nuevaCategoriaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="nuevaCategoriaModalLabel">
+                    <i class="bi bi-tag me-2 text-brand"></i>Nueva categoría
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formNuevaCategoria">
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <div class="bg-primary-soft rounded-circle d-inline-flex p-3" style="width: 70px; height: 70px; align-items: center; justify-content: center;">
+                            <i class="bi bi-tags" style="font-size: 2rem; color: #0a4b8c;"></i>
+                        </div>
+                        <p class="text-muted small mt-2">Crea una nueva categoría para organizar tus productos</p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nuevaCategoriaNombre" class="form-label">Nombre de la categoría <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nuevaCategoriaNombre" name="categoria" placeholder="Ej: Pasteles, Galletas, Chocolates" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-brand-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-brand" id="btnGuardarCategoria">
+                        <i class="bi bi-plus-circle me-1"></i> Crear categoría
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editarCategoriaModal" tabindex="-1" aria-labelledby="editarCategoriaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarCategoriaModalLabel">
+                    <i class="bi bi-pencil-square me-2 text-brand"></i>Editar categoría
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarCategoria">
+                <div class="modal-body">
+                    <input type="hidden" id="editarCategoriaId">
+                    <div class="text-center mb-3">
+                        <div class="bg-primary-soft rounded-circle d-inline-flex p-3" style="width: 60px; height: 60px; align-items: center; justify-content: center;">
+                            <i class="bi bi-pencil" style="font-size: 1.5rem; color: #0a4b8c;"></i>
+                        </div>
+                        <p class="text-muted small mt-2">Actualiza el nombre de la categoría</p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editarCategoriaNombre" class="form-label">Nombre de la categoría <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editarCategoriaNombre" name="categoria" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-brand-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-brand" id="btnGuardarEditarCategoria">
+                        <i class="bi bi-save me-1"></i> Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="nuevoProductoModal" tabindex="-1" aria-labelledby="nuevoProductoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="nuevoProductoModalLabel"><i class="bi bi-plus-circle me-2 text-brand"></i>Nuevo producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formNuevoProducto" enctype="multipart/form-data" method="POST" action="{{ url_for('admin.crear_producto') }}">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nuevoNombre" class="form-label">Nombre del producto <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nuevoNombre" name="producto" placeholder="Ej: Tarta de Fresa" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="nuevoPrecio" class="form-label">Precio ($) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="nuevoPrecio" name="precio" placeholder="0.00" step="0.01" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="nuevoCategoria" class="form-label">Categoría <span class="text-danger">*</span></label>
+                            <select class="form-select" id="nuevoCategoria" name="id_categoria" required>
+                                <option value="">Seleccionar</option>
+                                {% for categoria in categorias %}
+                                <option value="{{ categoria.id_categoria }}">{{ categoria.categoria }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="nuevoStock" class="form-label">Stock <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="nuevoStock" name="stock" placeholder="0" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="nuevoImagen" class="form-label">Imagen</label>
+                            <input type="file" class="form-control" id="nuevoImagen" name="imagen" accept="image/*">
+                        </div>
+                        <div class="col-12">
+                            <label for="nuevoDescripcion" class="form-label">Descripción <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="nuevoDescripcion" name="descripcion" rows="2" placeholder="Breve descripción del producto..." required></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-brand-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-brand">Crear producto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editarProductoModal" tabindex="-1" aria-labelledby="editarProductoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarProductoModalLabel"><i class="bi bi-pencil-square me-2 text-brand"></i>Editar producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarProducto" enctype="multipart/form-data" method="POST" action="{{ url_for('admin.editar_producto', id_producto=0) }}">
+                <div class="modal-body">
+                    <input type="hidden" id="editarId" name="id_producto">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="editarNombre" class="form-label">Nombre del producto <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="editarNombre" name="producto" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editarPrecio" class="form-label">Precio ($) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="editarPrecio" name="precio" step="0.01" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editarCategoria" class="form-label">Categoría <span class="text-danger">*</span></label>
+                            <select class="form-select" id="editarCategoria" name="id_categoria" required>
+                                {% for categoria in categorias %}
+                                <option value="{{ categoria.id_categoria }}">{{ categoria.categoria }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editarStock" class="form-label">Stock <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="editarStock" name="stock" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editarImagen" class="form-label">Cambiar imagen</label>
+                            <input type="file" class="form-control" id="editarImagen" name="imagen" accept="image/*">
+                        </div>
+                        <div class="col-12">
+                            <label for="editarDescripcion" class="form-label">Descripción <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="editarDescripcion" name="descripcion" rows="2" required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Imagen actual</label>
+                            <div id="editarImagenActual" class="d-flex align-items-center gap-3">
+                                <div class="img-placeholder" style="width: 80px; height: 80px;">
+                                    <i class="bi bi-image"></i>
+                                    <span>vacío</span>
+                                </div>
+                                <div>
+                                    <p class="text-muted small mb-1" id="editarNombreImagen">Sin imagen cargada</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-brand-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-brand">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="verProductoModal" tabindex="-1" aria-labelledby="verProductoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="verProductoModalLabel"><i class="bi bi-eye me-2 text-brand"></i>Detalle del producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4" id="verProductoContenido">
+                    <div class="col-md-5">
+                        <div id="verImagen" class="img-placeholder w-100" style="height: 200px; width: 100%; border-radius: 16px;">
+                            <i class="bi bi-image" style="font-size: 3rem;"></i>
+                            <span>Sin imagen</span>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <span class="badge bg-primary-soft text-brand"><i class="bi bi-image me-1"></i> <span id="verEstadoImagen">Sin imagen</span></span>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <h4 class="fw-bold text-brand" id="verNombre">-</h4>
+                        <p class="text-muted"><span class="fw-semibold">ID:</span> <span id="verId">-</span></p>
+                        <p class="text-muted"><span class="fw-semibold">Usuario ID:</span> <span id="verUsuarioId">-</span></p>
+                        <div class="d-flex flex-wrap gap-3 mb-2">
+                            <span class="badge bg-primary-soft text-brand p-2"><i class="bi bi-tag me-1"></i> <span id="verCategoria">-</span></span>
+                            <span class="badge bg-success-subtle text-success p-2"><i class="bi bi-box-seam me-1"></i> Stock: <span id="verStock">-</span></span>
+                        </div>
+                        <h5 class="fw-bold text-brand">$<span id="verPrecio">-</span></h5>
+                        <p class="text-muted small" id="verDescripcion">-</p>
+                        <hr class="separator-light">
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-primary-soft text-brand"><i class="bi bi-clock-history me-1"></i> Creado por: <span id="verUsuario">-</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-brand-outline" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-brand" onclick="editarProductoDesdeVer()">Editar producto</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="eliminarProductoModal" tabindex="-1" aria-labelledby="eliminarProductoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eliminarProductoModalLabel"><i class="bi bi-exclamation-triangle me-2 text-danger"></i>Eliminar producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-2">
+                    <i class="bi bi-trash3 display-4 text-danger mb-3"></i>
+                    <h6 class="fw-bold">¿Estás seguro?</h6>
+                    <p class="text-muted small">Esta acción eliminará permanentemente el producto <strong id="eliminarNombre">-</strong> y no se podrá recuperar.</p>
+                    <p class="text-muted small text-danger"><i class="bi bi-exclamation-circle"></i> También se eliminarán todas sus imágenes asociadas.</p>
+                    <input type="hidden" id="eliminarId">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-brand-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="confirmarEliminar()"><i class="bi bi-trash3 me-1"></i> Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="eliminarCategoriaModal" tabindex="-1" aria-labelledby="eliminarCategoriaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eliminarCategoriaModalLabel"><i class="bi bi-exclamation-triangle me-2 text-danger"></i>Eliminar categoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-2">
+                    <i class="bi bi-tag-x display-4 text-danger mb-3"></i>
+                    <h6 class="fw-bold">¿Estás seguro?</h6>
+                    <p class="text-muted small">Esta acción eliminará permanentemente la categoría <strong id="eliminarCategoriaNombre">-</strong>.</p>
+                    <p class="text-muted small text-danger"><i class="bi bi-exclamation-circle"></i> Solo se puede eliminar si no tiene productos asociados.</p>
+                    <input type="hidden" id="eliminarCategoriaId">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-brand-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="confirmarEliminarCategoria()"><i class="bi bi-trash3 me-1"></i> Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('formNuevaCategoria').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const categoria = document.getElementById('nuevaCategoriaNombre').value.trim();
+        const submitBtn = document.getElementById('btnGuardarCategoria');
+        if (!categoria) {
+            alert('Por favor, ingresa el nombre de la categoría.');
+            return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...';
+        fetch('{{ url_for("admin.crear_categoria") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'categoria': categoria
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarNotificacion('Categoría creada exitosamente', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert(data.message || 'Error al crear la categoría');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Crear categoría';
+            }
+        })
+        .catch(error => {
+            alert('Error al crear la categoría');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Crear categoría';
+        });
+    });
+
+    function editarCategoria(id, nombre) {
+        document.getElementById('editarCategoriaId').value = id;
+        document.getElementById('editarCategoriaNombre').value = nombre;
+        const modal = new bootstrap.Modal(document.getElementById('editarCategoriaModal'));
+        modal.show();
+    }
+
+    document.getElementById('formEditarCategoria').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('editarCategoriaId').value;
+        const nombre = document.getElementById('editarCategoriaNombre').value.trim();
+        const submitBtn = document.getElementById('btnGuardarEditarCategoria');
+        
+        if (!nombre) {
+            alert('Por favor, ingresa el nombre de la categoría.');
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...';
+        
+        fetch('{{ url_for("admin.editar_categoria", id_categoria=0) }}'.replace('0', id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'categoria': nombre
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarNotificacion('Categoría actualizada exitosamente', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert(data.message || 'Error al actualizar la categoría');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-save me-1"></i> Guardar cambios';
+            }
+        })
+        .catch(error => {
+            alert('Error al actualizar la categoría');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-save me-1"></i> Guardar cambios';
+        });
+    });
+
+    let eliminarCategoriaId = null;
+
+    function eliminarCategoria(id, nombre) {
+        eliminarCategoriaId = id;
+        document.getElementById('eliminarCategoriaNombre').textContent = nombre;
+        document.getElementById('eliminarCategoriaId').value = id;
+        const modal = new bootstrap.Modal(document.getElementById('eliminarCategoriaModal'));
+        modal.show();
+    }
+
+    function confirmarEliminarCategoria() {
+        const id = document.getElementById('eliminarCategoriaId').value;
+        const submitBtn = document.querySelector('#eliminarCategoriaModal .btn-danger');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Eliminando...';
+        
+        fetch('{{ url_for("admin.eliminar_categoria", id_categoria=0) }}'.replace('0', id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarNotificacion('Categoría eliminada exitosamente', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert(data.message || 'Error al eliminar la categoría');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> Eliminar';
+            }
+        })
+        .catch(error => {
+            alert('Error al eliminar la categoría');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> Eliminar';
+        });
+    }
+
+    function mostrarNotificacion(mensaje, tipo) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${tipo === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+        toast.style.position = 'fixed';
+        toast.style.top = '20px';
+        toast.style.right = '20px';
+        toast.style.zIndex = '9999';
+        toast.style.borderRadius = '12px';
+        toast.style.boxShadow = '0 8px 24px rgba(0,40,80,0.15)';
+        toast.style.padding = '1rem 1.5rem';
+        toast.style.maxWidth = '400px';
+        toast.innerHTML = `
+            <strong>${tipo === 'success' ? '✅' : '❌'}</strong> ${mensaje}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+
+    function filtrarProductos() {
+        const busqueda = document.getElementById('buscarProducto').value.toLowerCase();
+        const categoria = document.getElementById('filtroCategoria').value;
+        const stock = document.getElementById('filtroStock').value;
+        const filas = document.querySelectorAll('.producto-fila');
+        let contador = 0;
+
+        filas.forEach(fila => {
+            const nombre = fila.dataset.nombre || '';
+            const cat = fila.dataset.categoria || '';
+            const stk = parseInt(fila.dataset.stock) || 0;
+
+            let mostrar = true;
+
+            if (busqueda && !nombre.includes(busqueda)) {
+                mostrar = false;
+            }
+
+            if (categoria !== 'todos' && cat !== categoria) {
+                mostrar = false;
+            }
+
+            if (stock === 'stock' && stk <= 0) {
+                mostrar = false;
+            }
+            if (stock === 'sin-stock' && stk > 0) {
+                mostrar = false;
+            }
+
+            fila.style.display = mostrar ? '' : 'none';
+            if (mostrar) contador++;
+        });
+
+        document.getElementById('totalMostrados').textContent = contador;
+    }
+
+    function limpiarFiltros() {
+        document.getElementById('buscarProducto').value = '';
+        document.getElementById('filtroCategoria').value = 'todos';
+        document.getElementById('filtroStock').value = 'todos';
+        filtrarProductos();
+    }
+
+    let verProductoId = null;
+
+    function verProducto(id) {
+        verProductoId = id;
+        fetch('{{ url_for("admin.api_ver_producto", id_producto=0) }}'.replace('0', id))
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const p = data.producto;
+                    document.getElementById('verNombre').textContent = p.producto;
+                    document.getElementById('verId').textContent = p.id_producto;
+                    document.getElementById('verUsuarioId').textContent = p.id_usuario;
+                    document.getElementById('verCategoria').textContent = p.categoria || 'Sin categoría';
+                    document.getElementById('verStock').textContent = p.stock;
+                    document.getElementById('verPrecio').textContent = p.precio.toFixed(2);
+                    document.getElementById('verDescripcion').textContent = p.descripcion;
+                    document.getElementById('verUsuario').textContent = p.id_usuario;
+
+                    const imgContainer = document.getElementById('verImagen');
+                    const estadoImg = document.getElementById('verEstadoImagen');
+                    if (p.imagenes && p.imagenes.length > 0) {
+                        const imgUrl = p.imagenes[0].url;
+                        imgContainer.innerHTML = `<img src="${imgUrl}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 16px;">`;
+                        estadoImg.textContent = 'Con imagen';
+                    } else {
+                        imgContainer.innerHTML = `
+                            <i class="bi bi-image" style="font-size: 3rem;"></i>
+                            <span>Sin imagen</span>
+                        `;
+                        estadoImg.textContent = 'Sin imagen';
+                    }
+
+                    const modal = new bootstrap.Modal(document.getElementById('verProductoModal'));
+                    modal.show();
+                }
+            })
+            .catch(error => {
+                alert('Error al cargar el producto');
+            });
+    }
+
+    function editarProductoDesdeVer() {
+        if (verProductoId) {
+            document.getElementById('verProductoModal').querySelector('.btn-close').click();
+            editarProducto(verProductoId);
+        }
+    }
+
+    function editarProducto(id) {
+        // Obtener el modal
+        const modalElement = document.getElementById('editarProductoModal');
+        const modal = new bootstrap.Modal(modalElement);
+        document.getElementById('editarId').value = '';
+        document.getElementById('editarNombre').value = '';
+        document.getElementById('editarPrecio').value = '';
+        document.getElementById('editarStock').value = '';
+        document.getElementById('editarDescripcion').value = '';
+        document.getElementById('editarCategoria').innerHTML = '<option value="">Cargando...</option>';
+        modal.show();
+        fetch('{{ url_for("admin.api_ver_producto", id_producto=0) }}'.replace('0', id))
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al cargar el producto');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const p = data.producto;
+                    document.getElementById('editarId').value = p.id_producto;
+                    document.getElementById('editarNombre').value = p.producto || '';
+                    document.getElementById('editarPrecio').value = p.precio || '';
+                    document.getElementById('editarStock').value = p.stock || '';
+                    document.getElementById('editarDescripcion').value = p.descripcion || '';
+                    const form = document.getElementById('formEditarProducto');
+                    form.action = '{{ url_for("admin.editar_producto", id_producto=0) }}'.replace('0', id);
+                    fetch('{{ url_for("admin.api_listar_categorias") }}')
+                        .then(response => response.json())
+                        .then(catData => {
+                            const select = document.getElementById('editarCategoria');
+                            select.innerHTML = '';
+                            
+                            if (catData.success && catData.categorias.length > 0) {
+                                catData.categorias.forEach(cat => {
+                                    const option = document.createElement('option');
+                                    option.value = cat.id_categoria;
+                                    option.textContent = cat.categoria;
+                                    if (cat.id_categoria === p.id_categoria) {
+                                        option.selected = true;
+                                    }
+                                    select.appendChild(option);
+                                });
+                            } else {
+                                select.innerHTML = '<option value="">No hay categorías disponibles</option>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al cargar categorías:', error);
+                            document.getElementById('editarCategoria').innerHTML = '<option value="">Error al cargar categorías</option>';
+                        });
+                    const imgContainer = document.getElementById('editarImagenActual');
+                    if (p.imagenes && p.imagenes.length > 0) {
+                        const imgUrl = p.imagenes[0].url;
+                        imgContainer.innerHTML = `
+                            <img src="${imgUrl}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px;">
+                            <div>
+                                <p class="text-muted small mb-1">Imagen actual</p>
+                                <button type="button" class="btn btn-brand-outline btn-sm" onclick="document.getElementById('editarImagen').click()">
+                                    <i class="bi bi-upload me-1"></i> Cambiar imagen
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        imgContainer.innerHTML = `
+                            <div class="img-placeholder" style="width: 80px; height: 80px;">
+                                <i class="bi bi-image"></i>
+                                <span>vacío</span>
+                            </div>
+                            <div>
+                                <p class="text-muted small mb-1">Sin imagen cargada</p>
+                                <button type="button" class="btn btn-brand-outline btn-sm" onclick="document.getElementById('editarImagen').click()">
+                                    <i class="bi bi-upload me-1"></i> Subir imagen
+                                </button>
+                            </div>
+                        `;
+                    }
+                } else {
+                    alert('Error al cargar los datos del producto');
+                    modal.hide();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cargar el producto para editar. Por favor, intenta nuevamente.');
+                modal.hide();
+            });
+    }
+    document.getElementById('formEditarProducto').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const form = this;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const formData = new FormData(form);
+        const nombre = document.getElementById('editarNombre').value.trim();
+        const precio = document.getElementById('editarPrecio').value;
+        const stock = document.getElementById('editarStock').value;
+        const categoria = document.getElementById('editarCategoria').value;
+        const descripcion = document.getElementById('editarDescripcion').value.trim();
+        
+        if (!nombre) {
+            alert('Por favor, ingresa el nombre del producto.');
+            return;
+        }
+        if (!precio || parseFloat(precio) <= 0) {
+            alert('Por favor, ingresa un precio válido.');
+            return;
+        }
+        if (!stock || parseInt(stock) < 0) {
+            alert('Por favor, ingresa un stock válido.');
+            return;
+        }
+        if (!categoria) {
+            alert('Por favor, selecciona una categoría.');
+            return;
+        }
+        if (!descripcion) {
+            alert('Por favor, ingresa una descripción.');
+            return;
+        }
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...';
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                throw new Error('Error en el servidor');
+            }
+        })
+        .then(data => {
+            if (data && data.success) {
+                mostrarNotificacion('Producto actualizado exitosamente', 'success');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editarProductoModal'));
+                if (modal) modal.hide();
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                alert(data?.message || 'Error al actualizar el producto');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-save me-1"></i> Guardar cambios';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (error.message.includes('Error en el servidor')) {
+                mostrarNotificacion('Producto actualizado exitosamente', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                alert('Error al actualizar el producto. Por favor, intenta nuevamente.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-save me-1"></i> Guardar cambios';
+            }
+        });
+    });
+
+    function editarProductoDesdeVer() {
+        if (verProductoId) {
+            const verModal = bootstrap.Modal.getInstance(document.getElementById('verProductoModal'));
+            if (verModal) verModal.hide();
+            editarProducto(verProductoId);
+        }
+    }
+    let eliminarId = null;
+    function eliminarProducto(id, nombre) {
+        eliminarId = id;
+        document.getElementById('eliminarNombre').textContent = nombre;
+        document.getElementById('eliminarId').value = id;
+        const modal = new bootstrap.Modal(document.getElementById('eliminarProductoModal'));
+        modal.show();
+    }
+    function confirmarEliminar() {
+        const id = document.getElementById('eliminarId').value;
+        fetch('{{ url_for("admin.eliminar_producto", id_producto=0) }}'.replace('0', id), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarNotificacion('Producto eliminado exitosamente', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert(data.message || 'Error al eliminar el producto');
+            }
+        })
+        .catch(error => {
+            alert('Error al eliminar el producto');
+        });
+    }
+    document.getElementById('formSubirImagen').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const idProducto = document.getElementById('selectProductoImagen').value;
+        const fileInput = document.getElementById('inputImagen');
+        const file = fileInput.files[0];
+        
+        if (!idProducto) {
+            alert('Por favor, selecciona un producto.');
+            return;
+        }
+        
+        if (!file) {
+            alert('Por favor, selecciona una imagen.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('id_producto', idProducto);
+        formData.append('imagen', file);
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Subiendo...';
+
+        fetch('{{ url_for("admin.crear_imagen") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarNotificacion('Imagen subida exitosamente', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert(data.message || 'Error al subir la imagen');
+            }
+        })
+        .catch(error => {
+            alert('Error al subir la imagen');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i> Subir imagen';
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggleBtn = document.getElementById('sidebarToggle');
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+        }
+
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 992) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        filtrarProductos();
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
