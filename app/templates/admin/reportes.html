@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %} Reportes de Catálogo · Dulce Explosion {% endblock %}
+
+{% block content %}
+<!-- Contenedor de la Barra Lateral Izquierda -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <h2><i class="bi bi-cupcake me-2"></i>Dulce Explosion</h2>
+        <small>Panel de administración</small>
+    </div>
+    <ul class="sidebar-nav">
+        <li>
+            <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap-fill"></i> Productos</a>
+        </li>
+        <li>
+            <a href="{{ url_for('admin.listar_usuarios') }}"><i class="bi bi-people-fill"></i> Clientes</a>
+        </li>
+        <!-- Sección de Reportes Activa -->
+        <li class="active">
+            <a href="{{ url_for('admin.reportes') }}"><i class="bi bi-bar-chart-fill"></i> Reportes</a>
+        </li>
+        <li>
+            <a href="{{ url_for('admin.perfil') }}"><i class="bi bi-person-circle"></i> Perfil</a>
+        </li>
+        <li style="margin-top: 2rem; border-top: 1px solid #e6f0ff; padding-top: 1rem;">
+            <a href="{{ url_for('auth.logout') }}" style="color: #dc3545;">
+                <i class="bi bi-box-arrow-right" style="color: #dc3545;"></i> Cerrar sesión
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- Contenido Principal del Módulo de Reportes -->
+<main class="main-content">
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 mt-3">
+        <div>
+            <h5 class="section-title mb-0"><i class="bi bi-collection-fill me-2 text-brand"></i>Reportes de Catálogo e Inventario</h5>
+            <span class="text-muted small">Indicadores reales y verificación del volumen físico de almacenamiento</span>
+        </div>
+        <button class="btn btn-brand btn-sm" onclick="cargarReportes()"><i class="bi bi-arrow-clockwise me-1"></i> Actualizar Catálogo</button>
+    </div>
+
+    <!-- Fila de Tarjetas de Indicadores Corregidas -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4 col-6">
+            <div class="card card-shadow p-3 bg-white h-100 text-center">
+                <span class="text-muted small text-uppercase fw-bold" style="font-weight: 600;">Productos Registrados</span>
+                <h3 class="fw-bold mb-0 text-primary mt-1" id="kpiTotalProductos">0 Productos</h3>
+                <span class="badge bg-primary-soft text-primary mt-2" style="font-weight: 500; width: max-content; margin: 0 auto;">En Catálogo</span>
+            </div>
+        </div>
+        <div class="col-md-4 col-6">
+            <div class="card card-shadow p-3 bg-white h-100 text-center">
+                <span class="text-muted small text-uppercase fw-bold" style="font-weight: 600;">Stock Total</span>
+                <h3 class="fw-bold mb-0 text-success mt-1" id="kpiTotalStock">0 unidades</h3>
+                <span class="badge bg-success-subtle text-success mt-2" style="font-weight: 500; width: max-content; margin: 0 auto;">En el inventario</span>
+            </div>
+        </div>
+        <div class="col-md-4 col-12">
+            <div class="card card-shadow p-3 bg-white h-100 text-center">
+                <span class="text-muted small text-uppercase fw-bold" style="font-weight: 600;">Alertas Críticas</span>
+                <h3 class="fw-bold mb-0 text-danger mt-1" id="kpiAlertas">0</h3>
+                <span class="badge bg-danger-subtle text-danger mt-2" style="font-weight: 500; width: max-content; margin: 0 auto;">Bajo Stock</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Tabla de Alertas de Inventario con Buscador -->
+        <div class="col-lg-7">
+            <div class="card card-shadow p-4 bg-white h-100">
+                <h5 class="section-title text-danger mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Verificación de Stock Crítico</h5>
+                <p class="text-muted small mb-3">Lista de artículos con 10 o menos existencias físicas en el almacén central.</p>
+                
+                <!-- Buscador para filtrar solicitado por el grupo -->
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="buscadorReporte" class="form-control border-start-0" placeholder="Buscar producto crítico para verificar..." oninput="cargarReportes()">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover text-center mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th>Stock</th>
+                                <th>Precio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaStockBajo">
+                            <tr>
+                                <td colspan="5" class="text-muted py-4">Cargando datos del inventario...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen por Categorías -->
+        <div class="col-lg-5">
+            <div class="card card-shadow p-4 bg-white h-100">
+                <h5 class="section-title text-brand mb-1"><i class="bi bi-pie-chart-fill me-2"></i>Variedad por Categoría</h5>
+                <p class="text-muted small mb-3">Distribución de productos registrados agrupados por su clasificación.</p>
+                
+                <ul class="list-group list-group-flush" id="listaCategoriasEstadistica">
+                    <li class="list-group-item text-muted py-3 text-center">Cargando clasificaciones...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note d-flex flex-wrap justify-content-between align-items-center mt-4">
+        <span><i class="bi bi-c-circle me-1"></i> 2026 Dulce Explosion · Reportes</span>
+        <span class="text-muted">v2.4.1 · <i class="bi bi-shield-check"></i> conexión segura</span>
+    </div>
+</main>
+
+<script>
+    function cargarReportes() {
+        // Capturar el valor escrito en la barra de búsqueda
+        const busqueda = document.getElementById('buscadorReporte').value;
+
+        // Enviar la consulta dinámica al backend
+        fetch(`/admin/api/reportes/estadisticas?q=${encodeURIComponent(busqueda)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Cargar métricas limpias basadas únicamente en el Catálogo
+                    document.getElementById('kpiTotalProductos').textContent = `${data.catalogo_kpis.total_productos} Productos`;
+                    document.getElementById('kpiTotalStock').textContent = `${data.catalogo_kpis.total_stock_fisico} unidades`;
+                    document.getElementById('kpiAlertas').textContent = data.total_alertas;
+
+                    // Cargar Tabla de Alertas de Stock Bajo
+                    const tbody = document.getElementById('tablaStockBajo');
+                    tbody.innerHTML = '';
+                    if (data.alertas_stock.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-success fw-bold py-3"><i class="bi bi-check-circle-fill me-1"></i> No se encontraron productos con stock crítico en la búsqueda.</td></tr>`;
+                    } else {
+                        data.alertas_stock.forEach(p => {
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td><span class="fw-semibold">#${p.id_producto}</span></td>
+                                    <td><span class="fw-semibold">${p.producto}</span></td>
+                                    <td><span class="badge bg-primary-soft text-brand">${p.categoria}</span></td>
+                                    <td><span class="badge bg-danger-subtle text-danger fw-bold">${p.stock}</span></td>
+                                    <td><strong>Bs. ${p.precio.toFixed(2)}</strong></td>
+                                </tr>
+                            `;
+                        });
+                    }
+
+                    // Cargar Lista de Variedad por Categorías
+                    const listaCat = document.getElementById('listaCategoriasEstadistica');
+                    listaCat.innerHTML = '';
+                    data.categorias_estadistica.forEach(c => {
+                        listaCat.innerHTML += `
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                <span class="fw-semibold text-muted"><i class="bi bi-tag-fill me-2 text-brand"></i>${c.categoria}</span>
+                                <span class="badge bg-primary-soft text-brand rounded-pill px-3 py-2 fw-bold">${c.total_productos} productos</span>
+                            </li>
+                        `;
+                    });
+                }
+            })
+            .catch(err => console.error("Error al recuperar JSON:", err));
+    }
+
+    document.addEventListener('DOMContentLoaded', cargarReportes);
+</script>
+{% endblock %}

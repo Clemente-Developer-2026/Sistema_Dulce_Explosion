@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %} Mi Perfil · Dulce Explosion {% endblock %}
+
+{% block content %}
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <h2><i class="bi bi-cupcake me-2"></i>Dulce Explosion</h2>
+        <small>Panel de administración</small>
+    </div>
+    <ul class="sidebar-nav">
+        <li>
+            <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap-fill"></i> Productos</a>
+        </li>
+        <li>
+            <a href="{{ url_for('admin.listar_usuarios') }}"><i class="bi bi-people-fill"></i> Clientes</a>
+        </li>
+        <li>
+            <a href="{{ url_for('admin.reportes') }}"><i class="bi bi-bar-chart-fill"></i> Reportes</a>
+        </li>
+        <!-- Sección de Perfil Activa -->
+        <li class="active">
+            <a href="{{ url_for('admin.perfil') }}"><i class="bi bi-person-circle"></i> Perfil</a>
+        </li>
+        <li style="margin-top: 2rem; border-top: 1px solid #e6f0ff; padding-top: 1rem;">
+            <a href="{{ url_for('auth.logout') }}" style="color: #dc3545;">
+                <i class="bi bi-box-arrow-right" style="color: #dc3545;"></i> Cerrar sesión
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<main class="main-content">
+    <div class="row g-4 mt-2">
+        <!-- Tarjeta Informativa de Sesión -->
+        <div class="col-md-4">
+            <div class="card card-shadow p-4 bg-white text-center">
+                <div class="bg-primary-soft rounded-circle d-inline-flex p-3 mb-3" style="width: 80px; height: 80px; align-items: center; justify-content: center; margin: 0 auto;">
+                    <i class="bi bi-person-circle text-brand" style="font-size: 2.5rem;"></i>
+                </div>
+                <h4 class="fw-bold text-brand mb-1" id="userDisplayNombre">{{ usuario.nombre }}</h4>
+                <span class="badge bg-primary-soft text-brand text-uppercase px-3 py-1 rounded-pill small" style="font-weight: 600;">
+                    <i class="bi bi-shield-check me-1"></i> {{ usuario.rol }}
+                </span>
+                <hr class="separator-light">
+                <p class="text-muted small text-start mb-1"><strong>Email corporativo:</strong> <span id="userDisplayEmail">{{ usuario.email }}</span></p>
+                <p class="text-muted small text-start mb-0"><strong>Teléfono:</strong> <span id="userDisplayTelefono">{{ usuario.telefono }}</span></p>
+            </div>
+        </div>
+
+        <!-- Bloques de Edición Operativa -->
+        <div class="col-md-8">
+            <!-- Formulario Datos del Administrador -->
+            <div class="card card-shadow p-4 bg-white mb-4">
+                <h5 class="section-title mb-3"><i class="bi bi-person-gear me-2 text-brand"></i>Editar Información Personal</h5>
+                <form id="formActualizarPerfil">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre Completo <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="perfNombre" value="{{ usuario.nombre }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="perfEmail" value="{{ usuario.email }}" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Número Telefónico <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="perfTelefono" value="{{ usuario.telefono }}" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-brand btn-sm mt-3" id="btnGuardarDatos">
+                        <i class="bi bi-save me-1"></i> Guardar Cambios
+                    </button>
+                </form>
+            </div>
+
+            <!-- Formulario Credenciales (Contraseña) -->
+            <div class="card card-shadow p-4 bg-white">
+                <h5 class="section-title mb-3"><i class="bi bi-lock-fill me-2 text-brand"></i>Cambiar Contraseña de Acceso</h5>
+                <form id="formCambiarPassword">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Contraseña Actual <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="passActual" required placeholder="••••••••">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nueva Contraseña <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="passNueva" required placeholder="Mínimo 8 caracteres">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Confirmar Nueva Contraseña <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="passConfirmar" required placeholder="Repite la contraseña">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-sm mt-3" id="btnGuardarPass">
+                        <i class="bi bi-shield-lock-fill me-1"></i> Modificar Contraseña
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Procesamiento AJAX para los Datos Personales
+    document.getElementById('formActualizarPerfil').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnGuardarDatos');
+        const nombre = document.getElementById('perfNombre').value.trim();
+        const email = document.getElementById('perfEmail').value.trim();
+        const telefono = document.getElementById('perfTelefono').value.trim();
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...';
+
+        fetch('/admin/api/perfil/actualizar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, email, telefono })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert(data.message);
+                document.getElementById('userDisplayNombre').textContent = nombre;
+                document.getElementById('userDisplayEmail').textContent = email;
+                document.getElementById('userDisplayTelefono').textContent = telefono;
+            } else {
+                alert(data.message || 'Error en el proceso');
+            }
+        })
+        .catch(err => alert('Error de conexión'))
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Modificaciones';
+        });
+    });
+
+    // Procesamiento AJAX para la Contraseña
+    document.getElementById('formCambiarPassword').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnGuardarPass');
+        const password_actual = document.getElementById('passActual').value;
+        const password_nueva = document.getElementById('passNueva').value;
+        const password_confirmar = document.getElementById('passConfirmar').value;
+
+        if (password_nueva !== password_confirmar) {
+            alert('La nueva contraseña y su confirmación no coinciden.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Validando clave...';
+
+        fetch('/admin/api/perfil/cambiar-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password_actual, password_nueva, password_confirmar })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if(data.success) {
+                document.getElementById('formCambiarPassword').reset();
+            }
+        })
+        .catch(err => alert('Error en la transacción segura'))
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-shield-lock-fill me-1"></i> Modificar Contraseña';
+        });
+    });
+</script>
+{% endblock %}

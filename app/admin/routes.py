@@ -334,3 +334,144 @@ def api_listar_categorias():
         "success": True,
         "categorias": [c.to_dict() for c in categorias]
     })
+
+@administrador_bp.route("/perfil")
+@login_required
+def perfil():
+    """Renderiza la plantilla del perfil para el administrador."""
+    return render_template("admin/perfil.html", usuario=current_user)
+
+@administrador_bp.route("/reportes")
+@login_required
+def reportes():
+    """Renderiza la vista de reportes manteniendo el Navbar y Sidebar."""
+    return render_template("admin/reportes.html")
+
+@administrador_bp.route("/api/perfil/actualizar", methods=["POST"])
+@login_required
+def api_actualizar_perfil():
+    """API para actualizar datos básicos del perfil (Nombre, Email, Teléfono)."""
+    data = request.get_json() or {}
+    nombre = data.get("nombre", "").strip()
+    email = data.get("email", "").strip()
+    telefono = data.get("telefono", "").strip()
+
+    if not nombre or not email or not telefono:
+        return jsonify({"success": False, "message": "Todos los campos obligatorios (*)"}), 400
+
+    email_existente = Usuario.query.filter(Usuario.email == email, Usuario.id_usuario != current_user.id_usuario).first()
+    if email_existente:
+        return jsonify({"success": False, "message": "Este correo electrónico ya está en uso."}), 400
+
+    try:
+        current_user.nombre = nombre
+        current_user.email = email
+        current_user.telefono = telefono
+        db.session.commit()
+        return jsonify({
+            "success": True, 
+            "message": "Datos de perfil actualizados correctamente.",
+            "usuario": current_user.to_dict()
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": f"Error en el servidor: {str(e)}"}), 500
+
+
+@administrador_bp.route("/api/perfil/cambiar-password", methods=["POST"])
+@login_required
+def api_cambiar_password():
+    """API para cambiar la contraseña del administrador verificando la anterior."""
+    data = request.get_json() or {}
+    password_actual = data.get("password_actual", "")
+    password_nueva = data.get("password_nueva", "")
+    password_confirmar = data.get("password_confirmar", "")
+
+    if not password_actual or not password_nueva or not password_confirmar:
+        return jsonify({"success": False, "message": "Todos los campos de contraseña son requeridos."}), 400
+    if password_nueva != password_confirmar:
+        return jsonify({"success": False, "message": "La nueva contraseña y su confirmación no coinciden."}), 400
+    if len(password_nueva) < 8:
+        return jsonify({"success": False, "message": "La nueva contraseña debe tener al menos 8 caracteres."}), 400
+
+    if not bcrypt.check_password_hash(current_user.password, password_actual):
+        return jsonify({"success": False, "message": "La contraseña actual es incorrecta."}), 401
+
+    try:
+        password_hash = bcrypt.generate_password_hash(password_nueva).decode('utf-8')
+        current_user.password = password_hash
+        db.session.commit()
+        return jsonify({"success": True, "message": "Contraseña actualizada con éxito."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": f"Error al cambiar contraseña: {str(e)}"}), 500
+
+
+from sqlalchemy import func  # Asegúrate de que esta línea esté al inicio de tu routes.py
+
+@administrador_bp.route("/api/reportes/estadisticas")
+@login_required
+def api_reportes_estadisticas():
+    """API JSON que genera métricas exclusivas del catálogo de manera ultra segura."""
+    try:
+        # 1. Capturar el filtro de búsqueda del input text
+        query_busqueda = request.args.get('q', '').strip()
+
+        # Alertas de Stock Crítico (10 o menos unidades)
+        consulta_criticos = Producto.query.filter(Producto.stock <= 10)
+        
+        # Filtrado dinámico por coincidencia de texto
+        if query_busqueda:
+            consulta_criticos = consulta_criticos.filter(Producto.producto.ilike(f"%{query_busqueda}%"))
+            
+        criticos = consulta_criticos.all()
+        
+        alertas_stock = []
+        for p in criticos:
+            # Obtener el nombre de la categoría de forma segura sin romper el código
+            nombre_cat = "General"
+            if p.categoria:
+                nombre_cat = p.categoria.categoria
+
+            alertas_stock.append({
+                "id_producto": p.id_producto,
+                "producto": p.producto,
+                "stock": p.stock,
+                "precio": p.precio,
+                "categoria": nombre_cat
+            })
+
+        # 2. Distribución de variedades por categoría
+        categorias = Categoria.query.all()
+        datos_categorias = []
+        for c in categorias:
+            datos_categorias.append({
+                "categoria": c.categoria,
+                "total_productos": len(c.productos) if c.productos else 0
+            })
+
+        # 3. Métricas reales del Catálogo (KPIs de Control)
+        total_productos_sistema = Producto.query.count() or 0
+        total_categorias_sistema = Categoria.query.count() or 0
+        
+        # Cálculo manual de existencias físicas para que SQLite NO de error
+        total_existencias_fisicas = 0
+        todos_los_productos = Producto.query.all()
+        for prod in todos_los_productos:
+            if prod.stock:
+                total_existencias_fisicas += int(prod.stock)
+
+        return jsonify({
+            "success": True,
+            "alertas_stock": alertas_stock,
+            "total_alertas": len(alertas_stock),
+            "categorias_estadistica": datos_categorias,
+            "catalogo_kpis": {
+                "total_productos": total_productos_sistema,
+                "total_categorias": total_categorias_sistema,
+                "total_stock_fisico": total_existencias_fisicas
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Error interno en la consulta: {str(e)}"}), 500
