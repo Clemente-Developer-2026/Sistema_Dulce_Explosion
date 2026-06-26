@@ -6,9 +6,9 @@ from app.main import main_bp
 def index():
     if current_user.is_authenticated:
         if current_user.rol.lower() in ["admin", "administrador"]:
-            return redirect(url_for("admin.dashboard")) 
+            return redirect(url_for("admin.dashboard"))
         else:
-            return redirect(url_for("main.pedidos"))
+            return redirect(url_for("cliente.catalogo"))  # ✅ Cliente va al catálogo
     return render_template("main/index.html")
 
 @main_bp.route("/administracion")
@@ -16,26 +16,28 @@ def index():
 def administracion():
     if current_user.rol.lower() not in ["admin", "administrador"]:
         flash("Acceso denegado. Solo administradores pueden acceder a esta sección.", "error")
-        return redirect(url_for("main.pedidos"))
+        return redirect(url_for("cliente.catalogo"))
     return redirect(url_for("admin.dashboard"))
 
 @main_bp.route("/pedidos")
 @login_required
 def pedidos():
-    return render_template("main/pedidos.html", usuario=current_user)
+    """Redirige a la página de pedidos del cliente"""
+    return redirect(url_for("cliente.mispedidos"))  # ✅ Cambiado a cliente.mispedidos
 
 @main_bp.route("/dashboard")
 @login_required
 def dashboard():
     if current_user.rol.lower() in ["admin", "administrador"]:
-        return redirect(url_for("admin.dashboard"))  
+        return redirect(url_for("admin.dashboard"))
     else:
-        return redirect(url_for("main.pedidos"))
+        return redirect(url_for("cliente.mispedidos"))  # ✅ Cambiado a cliente.mispedidos
 
 @main_bp.route("/perfil")
 @login_required
 def perfil():
-    return render_template("main/perfil.html", usuario=current_user)
+    """Redirige al perfil del cliente"""
+    return render_template("cliente/perfil.html", usuario=current_user)  # ✅ Ya apunta a cliente/perfil.html
 
 @main_bp.route("/check-auth")
 def check_auth():

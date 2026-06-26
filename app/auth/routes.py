@@ -14,25 +14,35 @@ def registro():
         telefono = request.form.get("telefono")
         password = request.form.get("password")
         rol = request.form.get("rol", "cliente")
+        
         if not all([nombre, email, telefono, password]):
             flash("Todos los campos marcados con * son obligatorios.", "error")
             return redirect(url_for("auth.registro"))
+        
         usuario_existente = Usuario.query.filter_by(email=email).first()
         if usuario_existente:
             flash("Este correo electrónico ya está registrado.", "error")
             return redirect(url_for("auth.registro"))
+        
         password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-        nuevo_usuario = Usuario(nombre=nombre,email=email,telefono=telefono,rol=rol.lower(), password=password_hash,fecha_registro=date.today())
+        nuevo_usuario = Usuario(
+            nombre=nombre,
+            email=email,
+            telefono=telefono,
+            rol=rol.lower(),
+            password=password_hash,
+            fecha_registro=date.today()
+        )
         db.session.add(nuevo_usuario)
         db.session.commit()
         login_user(nuevo_usuario)
+        
         if rol.lower() in ["admin", "administrador"]:
             flash(f"¡Bienvenido Administrador {nombre}!", "success")
-            return redirect(url_for("main.administracion"))
+            return redirect(url_for("admin.dashboard"))
         else:
             flash(f"¡Bienvenido {nombre}! Tu cuenta ha sido creada exitosamente.", "success")
-            return redirect(url_for("main.pedidos"))               
-
+            return redirect(url_for("cliente.catalogo"))
 
 
 @usuarios_bp.route("/login", methods=["GET", "POST"])
@@ -41,21 +51,24 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
         remember = request.form.get("remember") == "on"
+        
         if not email or not password:
             flash("Por favor, ingresa tu email y contraseña.", "error")
             return redirect(url_for("auth.login"))
+        
         usuario = Usuario.query.filter_by(email=email).first()
         if usuario and bcrypt.check_password_hash(usuario.password, password):
             login_user(usuario, remember=remember)
             if usuario.rol.lower() in ["admin", "administrador"]:
                 flash(f"¡Bienvenido Administrador {usuario.nombre}!", "success")
-                return redirect(url_for("main.administracion"))
+                return redirect(url_for("admin.dashboard"))
             else:
                 flash(f"¡Bienvenido {usuario.nombre}!", "success")
-                return redirect(url_for("main.pedidos"))
+                return redirect(url_for("cliente.catalogo"))
         else:
             flash("Credenciales incorrectas. Por favor, verifica tu email y contraseña.", "error")
             return redirect(url_for("auth.login"))
+    
     return render_template("auth/login.html")
 
 
@@ -90,33 +103,46 @@ def verificar_rol():
 def api_registro():
     data = request.get_json()
     required_fields = ["nombre", "email", "telefono", "password"]
+    
     if not all(field in data for field in required_fields):
         return jsonify({
             "success": False, 
             "message": "Todos los campos son requeridos"
-        }), 400  
+        }), 400
+    
     nombre = data.get("nombre")
     email = data.get("email")
     telefono = data.get("telefono")
     password = data.get("password")
     rol = data.get("rol", "cliente")
+    
     usuario_existente = Usuario.query.filter_by(email=email).first()
     if usuario_existente:
         return jsonify({
             "success": False, 
             "message": "Este correo electrónico ya está registrado"
         }), 400
+    
     password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-    nuevo_usuario = Usuario(nombre=nombre,email=email,telefono=telefono,rol=rol.lower(),password=password_hash,fecha_registro=date.today())
+    nuevo_usuario = Usuario(
+        nombre=nombre,
+        email=email,
+        telefono=telefono,
+        rol=rol.lower(),
+        password=password_hash,
+        fecha_registro=date.today()
+    )
     db.session.add(nuevo_usuario)
     db.session.commit()
     login_user(nuevo_usuario)
+    
     if rol.lower() in ["admin", "administrador"]:
-        redirect_url = url_for("main.administracion")
+        redirect_url = url_for("admin.dashboard")
         tipo = "administrador"
     else:
         redirect_url = url_for("main.pedidos")
         tipo = "cliente"
+    
     return jsonify({
         "success": True,
         "message": "Registro exitoso",
@@ -131,27 +157,30 @@ def api_registro():
     })
 
 
-
 @usuarios_bp.route("/api/login", methods=["POST"])
 def api_login():
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
     remember = data.get("remember", False)
+    
     if not email or not password:
         return jsonify({
             "success": False, 
             "message": "Email y contraseña son requeridos"
         }), 400
+    
     usuario = Usuario.query.filter_by(email=email).first()
     if usuario and bcrypt.check_password_hash(usuario.password, password):
         login_user(usuario, remember=remember)
+        
         if usuario.rol.lower() in ["admin", "administrador"]:
-            redirect_url = url_for("main.administracion")
+            redirect_url = url_for("admin.dashboard")
             tipo = "administrador"
         else:
             redirect_url = url_for("main.pedidos")
-            tipo = "cliente"    
+            tipo = "cliente"
+        
         return jsonify({
             "success": True,
             "message": "Login exitoso",
@@ -178,7 +207,7 @@ def api_verificar_sesion():
             tipo = "administrador"
         else:
             tipo = "cliente"
-            
+        
         return jsonify({
             "authenticated": True,
             "usuario": {

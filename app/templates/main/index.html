@@ -12,7 +12,7 @@
             <div class="d-flex flex-wrap gap-3">
                 {% if current_user.is_authenticated %}
                     {% if current_user.rol.lower() in ['admin', 'administrador'] %}
-                        <a href="{{ url_for('main.administracion') }}" class="btn btn-brand-light">
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-brand-light">
                             <i class="bi bi-speedometer2 me-2"></i> Ir al Dashboard
                         </a>
                     {% else %}
@@ -85,7 +85,7 @@
             Promociones exclusivas para nuevos clientes.</p>
             {% if current_user.is_authenticated %}
                 {% if current_user.rol.lower() in ['admin', 'administrador'] %}
-                    <a href="{{ url_for('main.administracion') }}" class="btn btn-brand-light">
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-brand-light">
                         <i class="bi bi-speedometer2 me-2"></i> Ir al Dashboard
                     </a>
                 {% else %}
@@ -105,6 +105,7 @@
         </div>
     </section>
 
+    <!-- MODAL LOGIN -->
     <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-md">
             <div class="modal-content">
@@ -162,6 +163,7 @@
         </div>
     </div>
 
+    <!-- MODAL REGISTRO -->
     <div class="modal fade" id="registroModal" tabindex="-1" aria-labelledby="registroModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -211,12 +213,10 @@
                                 <label for="regTelefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="regTelefono" placeholder="+591 73042633" required>
                             </div>
-
                             <div class="col-md-6">
                                 <label for="regRol" class="form-label">Tipo de cuenta <span class="text-danger">*</span></label>
                                 <select class="form-select" id="regRol" required>
                                     <option value="cliente">Cliente</option>
-                                    <option value="admin">Administrador</option>
                                 </select>
                                 <div class="form-text small text-muted">Selecciona el tipo de cuenta que deseas crear</div>
                             </div>
@@ -250,6 +250,7 @@
         </div>
     </div>
 
+    <!-- MODAL CONFIRMACIÓN -->
     <div class="modal fade" id="confirmacionModal" tabindex="-1" aria-labelledby="confirmacionModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
@@ -271,6 +272,7 @@
         </div>
     </div>
 
+    <!-- MODAL FLASH MESSAGES -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             <div class="modal fade" id="flashModal" tabindex="-1" aria-hidden="true">
@@ -320,6 +322,7 @@
                 icon.classList.add('bi-eye');
             }
         }
+
         document.addEventListener('DOMContentLoaded', function() {
             const flashModal = document.getElementById('flashModal');
             if (flashModal) {
@@ -329,8 +332,9 @@
                     modal.hide();
                 }, 3000);
             }
-
         });
+
+        // ===== LOGIN =====
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
             loginForm.addEventListener('submit', function(e) {
@@ -341,6 +345,7 @@
                 const remember = document.getElementById('rememberMe').checked;
                 const submitBtn = document.getElementById('loginBtn');
                 const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                
                 if (!email || !password) {
                     alert('Por favor, ingresa tu email y contraseña.');
                     return;
@@ -391,6 +396,7 @@
             });
         }
 
+        // ===== REGISTRO =====
         const registroForm = document.getElementById('registroForm');
         if (registroForm) {
             registroForm.addEventListener('submit', function(e) {
@@ -399,13 +405,13 @@
                 const nombre = document.getElementById('regNombre').value.trim();
                 const email = document.getElementById('regEmail').value.trim();
                 const telefono = document.getElementById('regTelefono').value.trim();
-                const direccion = document.getElementById('regDireccion').value.trim();
                 const password = document.getElementById('regPassword').value;
                 const confirmPassword = document.getElementById('regConfirmPassword').value;
                 const rol = document.getElementById('regRol').value;
                 const terminos = document.getElementById('terminos').checked;
                 const submitBtn = document.getElementById('registroBtn');
                 const registroModal = bootstrap.Modal.getInstance(document.getElementById('registroModal'));
+                
                 if (!nombre || !email || !telefono || !password) {
                     alert('Por favor, completa todos los campos obligatorios (*).');
                     return;
@@ -425,6 +431,7 @@
                     alert('Debes aceptar los términos y condiciones para registrarte.');
                     return;
                 }
+                
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Creando cuenta...';
                 
@@ -437,7 +444,6 @@
                         nombre, 
                         email, 
                         telefono, 
-                        direccion, 
                         password,
                         rol: rol
                     })
@@ -453,11 +459,14 @@
                 .then(data => {
                     if (data.success) {
                         if (registroModal) registroModal.hide();
+                        
                         mostrarConfirmacion(
                             `¡Registro exitoso!`,
                             `Bienvenido ${data.usuario.nombre}, tu cuenta ha sido creada correctamente.`
                         );
+                        
                         document.getElementById('registroForm').reset();
+                        
                         setTimeout(() => {
                             window.location.href = data.redirect;
                         }, 2000);
@@ -475,6 +484,8 @@
                 });
             });
         }
+
+        // ===== FUNCIÓN MOSTRAR CONFIRMACIÓN =====
         function mostrarConfirmacion(titulo, mensaje) {
             const confirmModalEl = document.getElementById('confirmacionModal');
             if (confirmModalEl) {
@@ -485,6 +496,7 @@
             }
         }
 
+        // ===== VALIDACIÓN DE CONTRASEÑAS EN TIEMPO REAL =====
         const regPassword = document.getElementById('regPassword');
         const regConfirmPassword = document.getElementById('regConfirmPassword');
 
@@ -515,6 +527,7 @@
             });
         }
 
+        // ===== NAVEGACIÓN ENTRE MODALES =====
         let abrirLogin = false;
 
         document.addEventListener('hidden.bs.modal', function(event) {
@@ -535,6 +548,7 @@
             });
         }
 
+        // ===== CIERRE DE MODALES CON ESC =====
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 const modales = document.querySelectorAll('.modal.show');
@@ -544,10 +558,5 @@
                 });
             }
         });
-
-
-        function redirigirUsuario(url) {
-            window.location.href = url;
-        }
     </script>
 {% endblock %}

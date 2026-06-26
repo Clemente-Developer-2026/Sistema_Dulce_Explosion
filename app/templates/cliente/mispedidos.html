@@ -1,0 +1,492 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Pedidos - Dulce Explosion{% endblock %}
+
+{% block content %}
+<!-- ===== SIDEBAR OVERLAY (mobile) ===== -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ===== SIDEBAR VERTICAL ===== -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <h2><i class="bi bi-cupcake me-2"></i>Dulce Explosion</h2>
+        <small>Panel de cliente</small>
+    </div>
+    <ul class="sidebar-nav">
+        <li>
+            <a href="{{ url_for('cliente.catalogo') }}"><i class="bi bi-grid-3x3-gap-fill"></i> Catálogo</a>
+        </li>
+        <li class="active">
+            <a href="{{ url_for('cliente.mispedidos') }}"><i class="bi bi-receipt"></i> Mis Pedidos</a>
+        </li>
+        <li>
+            <a href="{{ url_for('cliente.favoritos') }}"><i class="bi bi-heart"></i> Favoritos</a>
+        </li>
+        <li>
+            <a href="{{ url_for('cliente.perfil') }}"><i class="bi bi-person-circle"></i> Perfil</a>
+        </li>
+        <li style="margin-top: 2rem; border-top: 1px solid #e6f0ff; padding-top: 1rem;">
+            <a href="{{ url_for('auth.logout') }}" style="color: #dc3545;">
+                <i class="bi bi-box-arrow-right" style="color: #dc3545;"></i> Cerrar sesión
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<main class="main-content">
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="text-brand"><i class="bi bi-receipt me-2"></i>Mis Pedidos</h1>
+                <p class="text-muted">Historial de todos tus pedidos</p>
+            </div>
+            <a href="{{ url_for('cliente.catalogo') }}" class="btn btn-brand">
+                <i class="bi bi-arrow-left me-1"></i> Seguir comprando
+            </a>
+        </div>
+
+        <!-- Tarjetas de estadísticas -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="card card-shadow p-3 bg-white h-100">
+                    <span class="text-muted small text-uppercase" style="font-weight: 600;">Total Pedidos</span>
+                    <h3 class="fw-bold mb-0 text-brand">{{ pedidos|length if pedidos else 0 }}</h3>
+                    <span class="badge bg-primary-soft text-brand mt-1" style="font-weight: 500;">historial</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card card-shadow p-3 bg-white h-100">
+                    <span class="text-muted small text-uppercase" style="font-weight: 600;">Pendientes</span>
+                    <h3 class="fw-bold mb-0 text-brand">
+                        {% set pendientes = pedidos|selectattr('estado', 'equalto', 'pendiente')|list if pedidos else [] %}
+                        {{ pendientes|length }}
+                    </h3>
+                    <span class="badge bg-warning-subtle text-warning mt-1" style="font-weight: 500;">en proceso</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card card-shadow p-3 bg-white h-100">
+                    <span class="text-muted small text-uppercase" style="font-weight: 600;">Entregados</span>
+                    <h3 class="fw-bold mb-0 text-brand">
+                        {% set entregados = pedidos|selectattr('estado', 'equalto', 'entregado')|list if pedidos else [] %}
+                        {{ entregados|length }}
+                    </h3>
+                    <span class="badge bg-success-subtle text-success mt-1" style="font-weight: 500;">completados</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card card-shadow p-3 bg-white h-100">
+                    <span class="text-muted small text-uppercase" style="font-weight: 600;">Total Gastado</span>
+                    <h3 class="fw-bold mb-0 text-brand">
+                        {% set total = pedidos|sum(attribute='total') if pedidos else 0 %}
+                        Bs{{ "%.2f"|format(total) }}
+                    </h3>
+                    <span class="badge bg-primary-soft text-brand mt-1" style="font-weight: 500;">historial</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de pedidos -->
+        <div class="card card-shadow p-4 bg-white">
+            <div class="table-responsive">
+                <table class="table align-middle table-hover">
+                    <thead>
+                        <tr>
+                            <th># Pedido</th>
+                            <th>Fecha</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if pedidos %}
+                            {% for pedido in pedidos %}
+                            <tr>
+                                <td><span class="fw-semibold">#{{ pedido.id_pedido }}</span></td>
+                                <td>{{ pedido.fecha_pedido.strftime('%d/%m/%Y %H:%M') if pedido.fecha_pedido else 'No disponible' }}</td>
+                                <td><strong>Bs{{ "%.2f"|format(pedido.total) }}</strong></td>
+                                <td>
+                                    {% if pedido.estado == 'pendiente' %}
+                                        <span class="badge bg-warning-subtle text-warning"><i class="bi bi-clock me-1"></i> Pendiente</span>
+                                    {% elif pedido.estado == 'confirmado' %}
+                                        <span class="badge bg-info-subtle text-info"><i class="bi bi-check-circle me-1"></i> Confirmado</span>
+                                    {% elif pedido.estado == 'preparando' %}
+                                        <span class="badge bg-primary-subtle text-primary"><i class="bi bi-box-seam me-1"></i> Preparando</span>
+                                    {% elif pedido.estado == 'enviado' %}
+                                        <span class="badge bg-secondary-subtle text-secondary"><i class="bi bi-truck me-1"></i> Enviado</span>
+                                    {% elif pedido.estado == 'entregado' %}
+                                        <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle-fill me-1"></i> Entregado</span>
+                                    {% elif pedido.estado == 'cancelado' %}
+                                        <span class="badge bg-danger-subtle text-danger"><i class="bi bi-x-circle me-1"></i> Cancelado</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary">{{ pedido.estado }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-brand-outline btn-sm" onclick="verPedido({{ pedido.id_pedido }})">
+                                        <i class="bi bi-eye me-1"></i> Ver
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <i class="bi bi-inbox" style="font-size: 3rem; color: #b8d1f0;"></i>
+                                    <h5 class="text-muted mt-3">No tienes pedidos aún</h5>
+                                    <p class="text-muted small">¡Explora nuestro catálogo y haz tu primer pedido!</p>
+                                    <a href="{{ url_for('cliente.catalogo') }}" class="btn btn-brand mt-2">
+                                        <i class="bi bi-grid-3x3-gap-fill me-1"></i> Ver catálogo
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- ===== MODAL VER PEDIDO ===== -->
+<div class="modal fade" id="verPedidoModal" tabindex="-1" aria-labelledby="verPedidoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="verPedidoModalLabel"><i class="bi bi-receipt me-2 text-brand"></i>Detalle del pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="detallePedidoContenido">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-brand" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="text-muted mt-2">Cargando detalles...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-brand-outline" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-shadow {
+        box-shadow: 0 8px 24px rgba(0, 40, 80, 0.08);
+        border: none;
+        border-radius: 20px;
+    }
+    .bg-primary-soft {
+        background: #e6f0ff;
+    }
+    .text-brand {
+        color: #0a4b8c;
+    }
+    .btn-brand {
+        background: #0a4b8c;
+        color: white;
+        border-radius: 40px;
+        padding: 0.4rem 1.5rem;
+        font-weight: 500;
+        border: none;
+        transition: 0.2s;
+        font-size: 0.85rem;
+    }
+    .btn-brand:hover {
+        background: #083b70;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(10, 75, 140, 0.25);
+    }
+    .btn-brand-outline {
+        background: transparent;
+        color: #0a4b8c;
+        border: 1px solid #0a4b8c;
+        border-radius: 40px;
+        padding: 0.4rem 1.5rem;
+        font-weight: 500;
+        transition: 0.2s;
+    }
+    .btn-brand-outline:hover {
+        background: #0a4b8c;
+        color: white;
+    }
+    .table thead th {
+        background: #e6f0ff;
+        color: #0a3a6a;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 2px solid #c6dbf5;
+    }
+    .table td {
+        vertical-align: middle;
+        font-size: 0.95rem;
+    }
+    .modal-content {
+        border-radius: 24px;
+        border: none;
+        box-shadow: 0 20px 60px rgba(0, 40, 80, 0.2);
+    }
+    .modal-header {
+        border-bottom: 1px solid #e6f0ff;
+        padding: 1.5rem 2rem;
+    }
+    .modal-header .modal-title {
+        font-weight: 600;
+        color: #0a3a6a;
+    }
+    .modal-body {
+        padding: 1.5rem 2rem;
+    }
+    .modal-footer {
+        border-top: 1px solid #e6f0ff;
+        padding: 1rem 2rem 1.5rem;
+    }
+    .badge {
+        font-weight: 500;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 250px;
+        background: white;
+        box-shadow: 2px 0 12px rgba(0, 40, 80, 0.06);
+        padding: 1.5rem 0;
+        z-index: 1050;
+        transition: transform 0.3s ease;
+        overflow-y: auto;
+        border-right: 1px solid #e6f0ff;
+    }
+    .sidebar-brand {
+        padding: 0 1.5rem 1.5rem;
+        border-bottom: 1px solid #e6f0ff;
+        margin-bottom: 1.5rem;
+    }
+    .sidebar-brand h2 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #0a4b8c;
+        letter-spacing: -0.3px;
+    }
+    .sidebar-brand small {
+        color: #5a7fa0;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .sidebar-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .sidebar-nav li {
+        padding: 0.6rem 1.5rem;
+        margin: 0.2rem 0.8rem;
+        border-radius: 12px;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+    .sidebar-nav li:hover {
+        background: #e6f0ff;
+    }
+    .sidebar-nav li.active {
+        background: #e6f0ff;
+        border-left: 4px solid #0a4b8c;
+    }
+    .sidebar-nav li a {
+        text-decoration: none;
+        color: #0a3a6a;
+        font-weight: 500;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .sidebar-nav li a i {
+        font-size: 1.2rem;
+        color: #3f6fa3;
+        width: 24px;
+        text-align: center;
+    }
+    .sidebar-nav li.active a i,
+    .sidebar-nav li:hover a i {
+        color: #0a4b8c;
+    }
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.3);
+        z-index: 1040;
+    }
+    .sidebar-overlay.active {
+        display: block;
+    }
+    .main-content {
+        margin-left: 270px;
+        padding: 0 1.5rem 2rem;
+    }
+    @media (max-width: 992px) {
+        .sidebar {
+            transform: translateX(-100%);
+            width: 280px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .main-content {
+            margin-left: 0;
+            padding: 0 1rem 1.5rem;
+        }
+    }
+</style>
+
+<script>
+    function verPedido(id) {
+        const modal = new bootstrap.Modal(document.getElementById('verPedidoModal'));
+        const contenido = document.getElementById('detallePedidoContenido');
+        
+        contenido.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-brand" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="text-muted mt-2">Cargando detalles del pedido...</p>
+            </div>
+        `;
+        
+        modal.show();
+        
+        fetch('/cliente/pedido/detalle/' + id)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const p = data.pedido;
+                    let html = `
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <p><strong>Número de pedido:</strong> #${p.id_pedido}</p>
+                                <p><strong>Fecha:</strong> ${p.fecha_pedido}</p>
+                                <p><strong>Estado:</strong> 
+                                    <span class="badge bg-${p.estado === 'entregado' ? 'success' : p.estado === 'cancelado' ? 'danger' : 'warning'}">
+                                        ${p.estado.charAt(0).toUpperCase() + p.estado.slice(1)}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Dirección de entrega:</strong> ${p.direccion_entrega}</p>
+                                <p><strong>Teléfono de contacto:</strong> ${p.telefono_contacto}</p>
+                                <p><strong>Total:</strong> <strong class="text-brand">Bs${p.total.toFixed(2)}</strong></p>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6 class="fw-bold">Productos</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio unitario</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    if (p.detalles && p.detalles.length > 0) {
+                        p.detalles.forEach(item => {
+                            html += `
+                                <tr>
+                                    <td>${item.producto || 'Producto'}</td>
+                                    <td>${item.cantidad}</td>
+                                    <td>Bs${item.precio_unitario.toFixed(2)}</td>
+                                    <td>Bs${item.subtotal.toFixed(2)}</td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html += `
+                            <tr>
+                                <td colspan="4" class="text-center">No hay productos en este pedido</td>
+                            </tr>
+                        `;
+                    }
+                    
+                    html += `
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="3" class="text-end">Total:</th>
+                                        <th>Bs${p.total.toFixed(2)}</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        ${p.notas ? `<p><strong>Notas:</strong> ${p.notas}</p>` : ''}
+                    `;
+                    
+                    contenido.innerHTML = html;
+                } else {
+                    contenido.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="bi bi-exclamation-circle text-danger" style="font-size: 3rem;"></i>
+                            <h6 class="text-danger mt-2">Error al cargar el pedido</h6>
+                            <p class="text-muted">${data.message || 'Intenta nuevamente'}</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                contenido.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-exclamation-circle text-danger" style="font-size: 3rem;"></i>
+                        <h6 class="text-danger mt-2">Error al cargar el pedido</h6>
+                        <p class="text-muted">Error de conexión. Intenta nuevamente.</p>
+                    </div>
+                `;
+            });
+    }
+
+    // TOGGLE SIDEBAR
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggleBtn = document.getElementById('sidebarToggle');
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+        }
+
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 992) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

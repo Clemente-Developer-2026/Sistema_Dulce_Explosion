@@ -37,10 +37,12 @@ def create_app():
     from app.main import main_bp
     from app.auth import usuarios_bp
     from app.admin import administrador_bp
+    from app.cliente import cliente_bp
 
     app.register_blueprint(main_bp)  
     app.register_blueprint(usuarios_bp, url_prefix='/auth')
     app.register_blueprint(administrador_bp, url_prefix='/admin') 
+    app.register_blueprint(cliente_bp,url_prefix="/cliente")
 
     with app.app_context():
         db.create_all()

@@ -1,7 +1,7 @@
 from app.admin import administrador_bp
 from flask import redirect, request, url_for, jsonify, render_template, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from app.extensions import db
+from app.extensions import db, bcrypt
 from app.models import Usuario, Producto, Imagen, Categoria
 from app.utils import save_image, delete_image, get_image_url
 from datetime import date
