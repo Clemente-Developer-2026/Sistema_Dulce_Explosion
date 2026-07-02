@@ -18,7 +18,6 @@ def dashboard():
 @administrador_bp.route("/productos")
 @login_required
 def listar_productos():
-    """Redirige al dashboard con todos los productos"""
     return redirect(url_for("admin.dashboard"))
 
 
@@ -338,19 +337,16 @@ def api_listar_categorias():
 @administrador_bp.route("/perfil")
 @login_required
 def perfil():
-    """Renderiza la plantilla del perfil para el administrador."""
     return render_template("admin/perfil.html", usuario=current_user)
 
 @administrador_bp.route("/reportes")
 @login_required
 def reportes():
-    """Renderiza la vista de reportes manteniendo el Navbar y Sidebar."""
     return render_template("admin/reportes.html")
 
 @administrador_bp.route("/api/perfil/actualizar", methods=["POST"])
 @login_required
 def api_actualizar_perfil():
-    """API para actualizar datos básicos del perfil (Nombre, Email, Teléfono)."""
     data = request.get_json() or {}
     nombre = data.get("nombre", "").strip()
     email = data.get("email", "").strip()
@@ -381,7 +377,6 @@ def api_actualizar_perfil():
 @administrador_bp.route("/api/perfil/cambiar-password", methods=["POST"])
 @login_required
 def api_cambiar_password():
-    """API para cambiar la contraseña del administrador verificando la anterior."""
     data = request.get_json() or {}
     password_actual = data.get("password_actual", "")
     password_nueva = data.get("password_nueva", "")
@@ -409,7 +404,6 @@ def api_cambiar_password():
 @administrador_bp.route("/api/reportes/estadisticas")
 @login_required
 def api_reportes_estadisticas():
-    """API JSON que genera métricas exclusivas del catálogo de manera ultra segura."""
     try:
         query_busqueda = request.args.get('q', '').strip()
 

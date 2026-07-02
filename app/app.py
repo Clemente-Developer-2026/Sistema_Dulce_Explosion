@@ -16,7 +16,6 @@ def create_app():
 
     @app.context_processor
     def inject_datetime():
-        """Inyecta datetime en todos los templates"""
         return {'datetime': datetime}
 
     from app.utils import get_image_url

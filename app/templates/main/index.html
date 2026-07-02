@@ -105,7 +105,6 @@
         </div>
     </section>
 
-    <!-- MODAL LOGIN -->
     <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-md">
             <div class="modal-content">
@@ -163,7 +162,6 @@
         </div>
     </div>
 
-    <!-- MODAL REGISTRO -->
     <div class="modal fade" id="registroModal" tabindex="-1" aria-labelledby="registroModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -216,7 +214,9 @@
                             <div class="col-md-6">
                                 <label for="regRol" class="form-label">Tipo de cuenta <span class="text-danger">*</span></label>
                                 <select class="form-select" id="regRol" required>
+                                    <option value="">Seleccionar rol</option>
                                     <option value="cliente">Cliente</option>
+                                    <option value="administrador">Administrador</option>
                                 </select>
                                 <div class="form-text small text-muted">Selecciona el tipo de cuenta que deseas crear</div>
                             </div>
@@ -250,7 +250,6 @@
         </div>
     </div>
 
-    <!-- MODAL CONFIRMACIÓN -->
     <div class="modal fade" id="confirmacionModal" tabindex="-1" aria-labelledby="confirmacionModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
@@ -272,7 +271,6 @@
         </div>
     </div>
 
-    <!-- MODAL FLASH MESSAGES -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             <div class="modal fade" id="flashModal" tabindex="-1" aria-hidden="true">
@@ -334,7 +332,6 @@
             }
         });
 
-        // ===== LOGIN =====
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
             loginForm.addEventListener('submit', function(e) {
@@ -396,7 +393,6 @@
             });
         }
 
-        // ===== REGISTRO =====
         const registroForm = document.getElementById('registroForm');
         if (registroForm) {
             registroForm.addEventListener('submit', function(e) {
@@ -485,7 +481,6 @@
             });
         }
 
-        // ===== FUNCIÓN MOSTRAR CONFIRMACIÓN =====
         function mostrarConfirmacion(titulo, mensaje) {
             const confirmModalEl = document.getElementById('confirmacionModal');
             if (confirmModalEl) {
@@ -496,7 +491,6 @@
             }
         }
 
-        // ===== VALIDACIÓN DE CONTRASEÑAS EN TIEMPO REAL =====
         const regPassword = document.getElementById('regPassword');
         const regConfirmPassword = document.getElementById('regConfirmPassword');
 
@@ -527,7 +521,6 @@
             });
         }
 
-        // ===== NAVEGACIÓN ENTRE MODALES =====
         let abrirLogin = false;
 
         document.addEventListener('hidden.bs.modal', function(event) {
@@ -548,7 +541,6 @@
             });
         }
 
-        // ===== CIERRE DE MODALES CON ESC =====
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 const modales = document.querySelectorAll('.modal.show');

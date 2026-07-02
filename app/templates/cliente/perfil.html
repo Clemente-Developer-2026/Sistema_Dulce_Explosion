@@ -3,10 +3,8 @@
 {% block title %}Mi Perfil - Dulce Explosion{% endblock %}
 
 {% block content %}
-<!-- ===== SIDEBAR OVERLAY (mobile) ===== -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<!-- ===== SIDEBAR VERTICAL ===== -->
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <h2><i class="bi bi-cupcake me-2"></i>Dulce Explosion</h2>
@@ -25,7 +23,6 @@
         <li class="active">
             <a href="{{ url_for('cliente.perfil') }}"><i class="bi bi-person-circle"></i> Perfil</a>
         </li>
-        <!-- ===== BOTÓN CERRAR SESIÓN ===== -->
         <li style="margin-top: 2rem; border-top: 1px solid #e6f0ff; padding-top: 1rem;">
             <a href="{{ url_for('auth.logout') }}" style="color: #dc3545;">
                 <i class="bi bi-box-arrow-right" style="color: #dc3545;"></i> Cerrar sesión
@@ -34,10 +31,8 @@
     </ul>
 </nav>
 
-<!-- ===== CONTENIDO PRINCIPAL ===== -->
 <main class="main-content">
     <div class="container-fluid py-4">
-        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="text-brand"><i class="bi bi-person-circle me-2"></i>Mi Perfil</h1>
@@ -53,9 +48,7 @@
             </div>
         </div>
 
-        <!-- Información del perfil -->
         <div class="row g-4">
-            <!-- Foto de perfil -->
             <div class="col-md-4">
                 <div class="card card-shadow p-4 bg-white text-center">
                     <div class="bg-primary-soft rounded-circle d-inline-flex mx-auto" 
@@ -77,7 +70,6 @@
                 </div>
             </div>
 
-            <!-- Formulario de datos personales -->
             <div class="col-md-8">
                 <div class="card card-shadow p-4 bg-white">
                     <h5 class="section-title mb-3">
@@ -114,8 +106,6 @@
                         </div>
                     </form>
                 </div>
-
-                <!-- Formulario de cambio de contraseña -->
                 <div class="card card-shadow p-4 bg-white mt-4">
                     <h5 class="section-title mb-3">
                         <i class="bi bi-lock me-2 text-brand"></i>Cambiar contraseña
@@ -163,7 +153,6 @@
     </div>
 </main>
 
-<!-- ===== MODAL CARRITO ===== -->
 <div class="modal fade" id="carritoModal" tabindex="-1" aria-labelledby="carritoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -193,243 +182,8 @@
     </div>
 </div>
 
-<!-- ============================================ -->
-<!-- ESTILOS                                       -->
-<!-- ============================================ -->
-<style>
-    .card-shadow {
-        box-shadow: 0 8px 24px rgba(0, 40, 80, 0.08);
-        border: none;
-        border-radius: 20px;
-        transition: all 0.2s ease;
-    }
-    .card-shadow:hover {
-        box-shadow: 0 12px 32px rgba(0, 60, 130, 0.12);
-    }
-    .bg-primary-soft {
-        background: #e6f0ff;
-    }
-    .text-brand {
-        color: #0a4b8c;
-    }
-    .btn-brand {
-        background: #0a4b8c;
-        color: white;
-        border-radius: 40px;
-        padding: 0.4rem 1.5rem;
-        font-weight: 500;
-        border: none;
-        transition: 0.2s;
-        font-size: 0.85rem;
-    }
-    .btn-brand:hover {
-        background: #083b70;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(10, 75, 140, 0.25);
-    }
-    .btn-brand-outline {
-        background: transparent;
-        color: #0a4b8c;
-        border: 1px solid #0a4b8c;
-        border-radius: 40px;
-        padding: 0.4rem 1.5rem;
-        font-weight: 500;
-        transition: 0.2s;
-    }
-    .btn-brand-outline:hover {
-        background: #0a4b8c;
-        color: white;
-    }
-    .section-title {
-        font-weight: 600;
-        font-size: 1.1rem;
-        color: #0a3a6a;
-    }
-    .form-control {
-        border-radius: 12px;
-        border: 1px solid #d8e6fa;
-        font-size: 0.9rem;
-        padding: 0.5rem 1rem;
-        background: white;
-    }
-    .form-control:focus {
-        border-color: #0a4b8c;
-        box-shadow: 0 0 0 3px rgba(10, 75, 140, 0.15);
-    }
-    .form-control:disabled {
-        background-color: #f8f9fa;
-        cursor: not-allowed;
-    }
-    .modal-content {
-        border-radius: 24px;
-        border: none;
-        box-shadow: 0 20px 60px rgba(0, 40, 80, 0.2);
-    }
-    .modal-header {
-        border-bottom: 1px solid #e6f0ff;
-        padding: 1.5rem 2rem;
-    }
-    .modal-header .modal-title {
-        font-weight: 600;
-        color: #0a3a6a;
-    }
-    .modal-body {
-        padding: 1.5rem 2rem;
-    }
-    .modal-footer {
-        border-top: 1px solid #e6f0ff;
-        padding: 1rem 2rem 1.5rem;
-    }
-    .modal .form-label {
-        font-weight: 500;
-        color: #0a3a6a;
-        font-size: 0.85rem;
-    }
-    .btn-close {
-        background: transparent;
-        opacity: 0.7;
-        transition: 0.2s;
-    }
-    .btn-close:hover {
-        opacity: 1;
-        transform: rotate(90deg);
-    }
-    .input-group-position {
-        position: relative;
-    }
-    .password-toggle {
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: transparent;
-        border: none;
-        color: #8aadc8;
-        cursor: pointer;
-        z-index: 10;
-    }
-    .password-toggle:hover {
-        color: #0a4b8c;
-    }
-
-    /* SIDEBAR */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 100vh;
-        width: 250px;
-        background: white;
-        box-shadow: 2px 0 12px rgba(0, 40, 80, 0.06);
-        padding: 1.5rem 0;
-        z-index: 1050;
-        transition: transform 0.3s ease;
-        overflow-y: auto;
-        border-right: 1px solid #e6f0ff;
-    }
-    .sidebar-brand {
-        padding: 0 1.5rem 1.5rem;
-        border-bottom: 1px solid #e6f0ff;
-        margin-bottom: 1.5rem;
-    }
-    .sidebar-brand h2 {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #0a4b8c;
-        letter-spacing: -0.3px;
-    }
-    .sidebar-brand small {
-        color: #5a7fa0;
-        font-size: 0.75rem;
-        font-weight: 500;
-    }
-    .sidebar-nav {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    .sidebar-nav li {
-        padding: 0.6rem 1.5rem;
-        margin: 0.2rem 0.8rem;
-        border-radius: 12px;
-        transition: 0.2s;
-        cursor: pointer;
-    }
-    .sidebar-nav li:hover {
-        background: #e6f0ff;
-    }
-    .sidebar-nav li.active {
-        background: #e6f0ff;
-        border-left: 4px solid #0a4b8c;
-    }
-    .sidebar-nav li a {
-        text-decoration: none;
-        color: #0a3a6a;
-        font-weight: 500;
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    .sidebar-nav li a i {
-        font-size: 1.2rem;
-        color: #3f6fa3;
-        width: 24px;
-        text-align: center;
-    }
-    .sidebar-nav li.active a i,
-    .sidebar-nav li:hover a i {
-        color: #0a4b8c;
-    }
-    .sidebar-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.3);
-        z-index: 1040;
-    }
-    .sidebar-overlay.active {
-        display: block;
-    }
-    .main-content {
-        margin-left: 270px;
-        padding: 0 1.5rem 2rem;
-    }
-
-    @media (max-width: 992px) {
-        .sidebar {
-            transform: translateX(-100%);
-            width: 280px;
-        }
-        .sidebar.open {
-            transform: translateX(0);
-        }
-        .main-content {
-            margin-left: 0;
-            padding: 0 1rem 1.5rem;
-        }
-    }
-    @media (max-width: 768px) {
-        .bg-primary-soft.rounded-circle {
-            width: 80px !important;
-            height: 80px !important;
-        }
-        .bg-primary-soft.rounded-circle i {
-            font-size: 3rem !important;
-        }
-    }
-</style>
-
-<!-- ============================================ -->
-<!-- SCRIPTS                                      -->
-<!-- ============================================ -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // ===== TOGGLE SIDEBAR =====
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
         const toggleBtn = document.getElementById('sidebarToggle');
@@ -457,7 +211,6 @@
             });
         });
 
-        // ===== ACTUALIZAR CONTADOR DEL CARRITO =====
         function actualizarCarrito(cantidad) {
             const badge = document.querySelector('#carritoCount');
             if (badge) {
@@ -479,7 +232,6 @@
         cargarCarrito();
     });
 
-    // ===== TOGGLE PASSWORD =====
     function togglePassword(inputId, button) {
         const input = document.getElementById(inputId);
         const icon = button.querySelector('i');
@@ -494,7 +246,6 @@
         }
     }
 
-    // ===== ACTUALIZAR PERFIL =====
     document.getElementById('formPerfil').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -541,7 +292,6 @@
         });
     });
 
-    // ===== CAMBIAR CONTRASEÑA =====
     document.getElementById('formPassword').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -600,7 +350,6 @@
         });
     });
 
-    // ===== VALIDACIÓN EN TIEMPO REAL DE CONTRASEÑAS =====
     document.getElementById('passwordConfirmar').addEventListener('input', function() {
         const password = document.getElementById('passwordNueva').value;
         const confirm = this.value;
@@ -624,7 +373,6 @@
         }
     });
 
-    // ===== NOTIFICACIONES =====
     function mostrarNotificacion(mensaje, tipo) {
         const toast = document.createElement('div');
         toast.className = `alert alert-${tipo === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
@@ -646,7 +394,6 @@
         }, 3000);
     }
 
-    // ===== CARGAR CARRITO EN MODAL =====
     function cargarCarritoModal() {
         const contenido = document.getElementById('carritoContenido');
         contenido.innerHTML = `
@@ -683,7 +430,6 @@
         cargarCarritoModal();
     });
 
-    // ===== FINALIZAR PEDIDO =====
     function finalizarPedido() {
         const direccion = prompt('Ingresa tu dirección de entrega:');
         if (!direccion) {

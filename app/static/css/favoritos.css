@@ -1,0 +1,246 @@
+.card-shadow {
+    box-shadow: 0 8px 24px rgba(0, 40, 80, 0.08);
+    border: none;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+}
+
+.card-shadow:hover {
+    box-shadow: 0 12px 32px rgba(0, 60, 130, 0.12);
+}
+
+.bg-primary-soft {
+    background: #e6f0ff;
+}
+
+.text-brand {
+    color: #0a4b8c;
+}
+
+.btn-brand {
+    background: #0a4b8c;
+    color: white;
+    border-radius: 40px;
+    padding: 0.4rem 1.2rem;
+    font-weight: 500;
+    border: none;
+    transition: 0.2s;
+    font-size: 0.85rem;
+}
+
+.btn-brand:hover {
+    background: #083b70;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(10, 75, 140, 0.25);
+}
+
+.btn-brand-outline {
+    background: transparent;
+    color: #0a4b8c;
+    border: 1px solid #0a4b8c;
+    border-radius: 40px;
+    padding: 0.4rem 1.2rem;
+    font-weight: 500;
+    transition: 0.2s;
+}
+
+.btn-brand-outline:hover {
+    background: #0a4b8c;
+    color: white;
+}
+
+.btn-brand-sm {
+    padding: 0.25rem 0.8rem;
+    font-size: 0.8rem;
+}
+
+.producto-card {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 40, 80, 0.06);
+}
+
+.producto-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 40, 80, 0.12);
+}
+
+.producto-card .card-img-top {
+    border-radius: 0;
+}
+
+.producto-card .card-body {
+    padding: 1rem;
+}
+
+.producto-card .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0a3a6a;
+    margin-bottom: 0.3rem;
+}
+
+.img-placeholder {
+    background: #f2f8ff;
+    border: 2px dashed #b8d1f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3f6fa3;
+}
+
+.btn-remove-favorito {
+    background: #dc3545 !important;
+    color: white !important;
+    transition: all 0.2s;
+}
+
+.btn-remove-favorito:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.section-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #0a3a6a;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 250px;
+    background: white;
+    box-shadow: 2px 0 12px rgba(0, 40, 80, 0.06);
+    padding: 1.5rem 0;
+    z-index: 1050;
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    border-right: 1px solid #e6f0ff;
+}
+
+.sidebar-brand {
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid #e6f0ff;
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-brand h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #0a4b8c;
+    letter-spacing: -0.3px;
+}
+
+.sidebar-brand small {
+    color: #5a7fa0;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-nav li {
+    padding: 0.6rem 1.5rem;
+    margin: 0.2rem 0.8rem;
+    border-radius: 12px;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.sidebar-nav li:hover {
+    background: #e6f0ff;
+}
+
+.sidebar-nav li.active {
+    background: #e6f0ff;
+    border-left: 4px solid #0a4b8c;
+}
+
+.sidebar-nav li a {
+    text-decoration: none;
+    color: #0a3a6a;
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar-nav li a i {
+    font-size: 1.2rem;
+    color: #3f6fa3;
+    width: 24px;
+    text-align: center;
+}
+
+.sidebar-nav li.active a i,
+.sidebar-nav li:hover a i {
+    color: #0a4b8c;
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 1040;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
+.main-content {
+    margin-left: 270px;
+    padding: 0 1.5rem 2rem;
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%);
+        width: 280px;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 0 1rem 1.5rem;
+    }
+
+    .producto-card .card-img-top,
+    .img-placeholder {
+        height: 150px !important;
+    }
+}
+
+@media (max-width: 576px) {
+
+    .producto-card .card-img-top,
+    .img-placeholder {
+        height: 120px !important;
+    }
+
+    .producto-card .card-title {
+        font-size: 0.85rem;
+    }
+
+    .producto-card .card-text {
+        font-size: 0.75rem;
+    }
+}

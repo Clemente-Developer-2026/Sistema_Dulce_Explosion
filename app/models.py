@@ -11,11 +11,7 @@ class Usuario(db.Model, UserMixin):
     rol = db.Column(db.String, nullable=False)  
     password = db.Column(db.String, nullable=False)
     fecha_registro = db.Column(db.Date, nullable=False)
-    
-    # Relaciones existentes
     productos = db.relationship('Producto', back_populates='usuario', lazy=True, cascade="all, delete-orphan")
-    
-    # NUEVAS RELACIONES
     pedidos = db.relationship('Pedido', back_populates='usuario', lazy=True, cascade="all, delete-orphan")
     favoritos = db.relationship('Favorito', back_populates='usuario', lazy=True, cascade="all, delete-orphan")
     carrito = db.relationship('Carrito', back_populates='usuario', lazy=True, cascade="all, delete-orphan")
@@ -54,18 +50,12 @@ class Producto(db.Model):
     descripcion = db.Column(db.String, nullable=False)
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False)
     id_categoria = db.Column(db.Integer, db.ForeignKey('categorias.id_categoria'), nullable=False)  
-    
-    # Relaciones existentes
     usuario = db.relationship('Usuario', back_populates='productos')
     categoria = db.relationship('Categoria', back_populates='productos')
     imagenes = db.relationship('Imagen', back_populates='producto', lazy=True, cascade="all, delete-orphan")
-    
-    # NUEVAS RELACIONES
     detalle_pedidos = db.relationship('DetallePedido', back_populates='producto', lazy=True, cascade="all, delete-orphan")
     favoritos = db.relationship('Favorito', back_populates='producto', lazy=True, cascade="all, delete-orphan")
     carrito_items = db.relationship('CarritoItem', back_populates='producto', lazy=True, cascade="all, delete-orphan")
-    
-    # ✅ AGREGAR ESTA RELACIÓN PARA CATÁLOGOS
     catalogos = db.relationship('CatalogoProducto', back_populates='producto', lazy=True, cascade="all, delete-orphan")
 
     def to_dict(self):
@@ -95,7 +85,6 @@ class Imagen(db.Model):
         }
 
 class Catalogo(db.Model):
-    """Catálogo de productos destacados o promociones"""
     __tablename__ = "catalogos"
     id_catalogo = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
@@ -106,8 +95,6 @@ class Catalogo(db.Model):
     imagen = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relación con productos (muchos a muchos)
     productos = db.relationship('CatalogoProducto', back_populates='catalogo', lazy=True, cascade="all, delete-orphan")
     
     def to_dict(self):
@@ -124,15 +111,12 @@ class Catalogo(db.Model):
 
 
 class CatalogoProducto(db.Model):
-    """Tabla intermedia entre Catálogo y Producto"""
     __tablename__ = "catalogo_productos"
     id = db.Column(db.Integer, primary_key=True)
     id_catalogo = db.Column(db.Integer, db.ForeignKey('catalogos.id_catalogo'), nullable=False)
     id_producto = db.Column(db.Integer, db.ForeignKey('productos.id_producto'), nullable=False)
     orden = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relaciones
     catalogo = db.relationship('Catalogo', back_populates='productos')
     producto = db.relationship('Producto', back_populates='catalogos')  # ✅ Ahora existe en Producto
     
@@ -147,7 +131,6 @@ class CatalogoProducto(db.Model):
 
 
 class Pedido(db.Model):
-    """Pedido realizado por un usuario"""
     __tablename__ = "pedidos"
     id_pedido = db.Column(db.Integer, primary_key=True)
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False)
@@ -160,8 +143,6 @@ class Pedido(db.Model):
     fecha_entrega = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relaciones
     usuario = db.relationship('Usuario', back_populates='pedidos')
     detalles = db.relationship('DetallePedido', back_populates='pedido', lazy=True, cascade="all, delete-orphan")
     
@@ -182,7 +163,6 @@ class Pedido(db.Model):
 
 
 class DetallePedido(db.Model):
-    """Detalle de un pedido (productos incluidos)"""
     __tablename__ = "detalle_pedidos"
     id_detalle = db.Column(db.Integer, primary_key=True)
     id_pedido = db.Column(db.Integer, db.ForeignKey('pedidos.id_pedido'), nullable=False)
@@ -191,8 +171,6 @@ class DetallePedido(db.Model):
     precio_unitario = db.Column(db.Float, nullable=False)
     subtotal = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relaciones
     pedido = db.relationship('Pedido', back_populates='detalles')
     producto = db.relationship('Producto', back_populates='detalle_pedidos')
     
@@ -209,14 +187,11 @@ class DetallePedido(db.Model):
 
 
 class Favorito(db.Model):
-    """Productos favoritos de un usuario"""
     __tablename__ = "favoritos"
     id_favorito = db.Column(db.Integer, primary_key=True)
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False)
     id_producto = db.Column(db.Integer, db.ForeignKey('productos.id_producto'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relaciones
     usuario = db.relationship('Usuario', back_populates='favoritos')
     producto = db.relationship('Producto', back_populates='favoritos')
     
@@ -231,15 +206,12 @@ class Favorito(db.Model):
 
 
 class Carrito(db.Model):
-    """Carrito de compras de un usuario"""
     __tablename__ = "carritos"
     id_carrito = db.Column(db.Integer, primary_key=True)
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False, unique=True)
     total = db.Column(db.Float, nullable=False, default=0.0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relaciones
     usuario = db.relationship('Usuario', back_populates='carrito')
     items = db.relationship('CarritoItem', back_populates='carrito', lazy=True, cascade="all, delete-orphan")
     
@@ -254,7 +226,6 @@ class Carrito(db.Model):
 
 
 class CarritoItem(db.Model):
-    """Item del carrito de compras"""
     __tablename__ = "carrito_items"
     id_item = db.Column(db.Integer, primary_key=True)
     id_carrito = db.Column(db.Integer, db.ForeignKey('carritos.id_carrito'), nullable=False)
@@ -264,8 +235,6 @@ class CarritoItem(db.Model):
     subtotal = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relaciones
     carrito = db.relationship('Carrito', back_populates='items')
     producto = db.relationship('Producto', back_populates='carrito_items')
     
