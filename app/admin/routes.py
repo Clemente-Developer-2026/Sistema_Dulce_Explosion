@@ -1,10 +1,12 @@
 from app.admin import administrador_bp
-from flask import redirect, request, url_for, jsonify, render_template, flash, current_app
+from flask import redirect, request, url_for, jsonify, render_template, flash, current_app, Response
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db, bcrypt
-from app.models import Usuario, Producto, Imagen, Categoria
+from app.models import Usuario, Producto, Imagen, Categoria, Pedido, DetallePedido
 from app.utils import save_image, delete_image, get_image_url
-from datetime import date
+from datetime import date, datetime
+import csv
+import io
 
 @administrador_bp.route("/")
 @login_required
@@ -12,8 +14,190 @@ def dashboard():
     productos = Producto.query.all()
     categorias = Categoria.query.all()
     usuarios = Usuario.query.all()
-    for categoria in categorias:categoria.total_productos = len(categoria.productos)
-    return render_template("admin/administracion.html", productos=productos, categorias=categorias,usuarios=usuarios,total_productos=len(productos),total_categorias=len(categorias),total_usuarios=len(usuarios))
+    pedidos = Pedido.query.order_by(Pedido.fecha_pedido.desc()).all()
+    
+    for categoria in categorias:
+        categoria.total_productos = len(categoria.productos)
+    
+    return render_template("admin/administracion.html", 
+                         productos=productos, 
+                         categorias=categorias,
+                         usuarios=usuarios,
+                         pedidos=pedidos,
+                         total_productos=len(productos),
+                         total_categorias=len(categorias),
+                         total_usuarios=len(usuarios),
+                         total_pedidos=len(pedidos))
+
+# ============================================================
+# GESTIÓN DE PEDIDOS
+# ============================================================
+
+@administrador_bp.route("/pedido/actualizar/<int:id_pedido>", methods=["POST"])
+@login_required
+def actualizar_estado_pedido(id_pedido):
+    """Actualizar el estado de un pedido"""
+    pedido = Pedido.query.get_or_404(id_pedido)
+    nuevo_estado = request.form.get("estado")
+    
+    estados_validos = ['pendiente', 'confirmado', 'preparando', 'enviado', 'entregado', 'cancelado']
+    
+    if nuevo_estado not in estados_validos:
+        return jsonify({"success": False, "message": "Estado no válido"}), 400
+    
+    try:
+        pedido.estado = nuevo_estado
+        if nuevo_estado == 'entregado':
+            pedido.fecha_entrega = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Pedido actualizado a {nuevo_estado}",
+            "nuevo_estado": nuevo_estado
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@administrador_bp.route("/pedido/detalle/<int:id_pedido>")
+@login_required
+def detalle_pedido(id_pedido):
+    """Obtener detalles de un pedido (API)"""
+    pedido = Pedido.query.get_or_404(id_pedido)
+    return jsonify({
+        "success": True,
+        "pedido": pedido.to_dict()
+    })
+
+@administrador_bp.route("/api/pedidos")
+@login_required
+def api_listar_pedidos():
+    """API para listar pedidos con filtros"""
+    estado = request.args.get('estado', '')
+    fecha_inicio = request.args.get('fecha_inicio', '')
+    fecha_fin = request.args.get('fecha_fin', '')
+    
+    query = Pedido.query
+    
+    if estado and estado != 'todos':
+        query = query.filter_by(estado=estado)
+    if fecha_inicio:
+        query = query.filter(Pedido.fecha_pedido >= datetime.strptime(fecha_inicio, '%Y-%m-%d'))
+    if fecha_fin:
+        query = query.filter(Pedido.fecha_pedido <= datetime.strptime(fecha_fin, '%Y-%m-%d'))
+    
+    pedidos = query.order_by(Pedido.fecha_pedido.desc()).all()
+    
+    return jsonify({
+        "success": True,
+        "pedidos": [p.to_dict() for p in pedidos]
+    })
+
+@administrador_bp.route("/exportar/pedidos")
+@login_required
+def exportar_pedidos_excel():
+    """Exportar pedidos a CSV con formato Excel"""
+    estado = request.args.get('estado', '')
+    fecha_inicio = request.args.get('fecha_inicio', '')
+    fecha_fin = request.args.get('fecha_fin', '')
+    
+    query = Pedido.query
+    
+    if estado and estado != 'todos':
+        query = query.filter_by(estado=estado)
+    if fecha_inicio:
+        query = query.filter(Pedido.fecha_pedido >= datetime.strptime(fecha_inicio, '%Y-%m-%d'))
+    if fecha_fin:
+        query = query.filter(Pedido.fecha_pedido <= datetime.strptime(fecha_fin, '%Y-%m-%d'))
+    
+    pedidos = query.order_by(Pedido.fecha_pedido.desc()).all()
+    
+    # Crear CSV
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_ALL)
+    
+    # Encabezados
+    writer.writerow([
+        'ID Pedido', 'Cliente', 'Fecha Pedido', 'Total (Bs)', 'Estado', 
+        'Direccion Entrega', 'Telefono Contacto', 'Notas', 'Fecha Entrega'
+    ])
+    
+    # Datos
+    for p in pedidos:
+        writer.writerow([
+            p.id_pedido,
+            p.usuario.nombre if p.usuario else 'N/A',
+            p.fecha_pedido.strftime('%d/%m/%Y %H:%M') if p.fecha_pedido else '',
+            f"{p.total:.2f}",
+            p.estado,
+            p.direccion_entrega,
+            p.telefono_contacto,
+            p.notas or '',
+            p.fecha_entrega.strftime('%d/%m/%Y %H:%M') if p.fecha_entrega else ''
+        ])
+    
+    # Resumen
+    writer.writerow([])
+    writer.writerow(['RESUMEN DE PEDIDOS'])
+    writer.writerow([f'Total Pedidos: {len(pedidos)}'])
+    
+    estados = ['pendiente', 'confirmado', 'preparando', 'enviado', 'entregado', 'cancelado']
+    for estado_nombre in estados:
+        count = sum(1 for p in pedidos if p.estado == estado_nombre)
+        writer.writerow([f'{estado_nombre.capitalize()}: {count}'])
+    
+    total = sum(p.total for p in pedidos)
+    writer.writerow([f'Total Recaudado: Bs {total:.2f}'])
+    
+    # Crear respuesta
+    output.seek(0)
+    response = Response(output.getvalue(), mimetype='text/csv')
+    response.headers['Content-Disposition'] = f'attachment; filename=pedidos_{date.today().strftime("%Y%m%d")}.csv'
+    response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+    
+    return response
+
+@administrador_bp.route("/exportar/productos")
+@login_required
+def exportar_productos_excel():
+    """Exportar productos a CSV con formato Excel"""
+    productos = Producto.query.all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_ALL)
+    
+    writer.writerow([
+        'ID Producto', 'Producto', 'Categoria', 'Precio (Bs)', 'Stock', 'Descripcion', 'ID Usuario'
+    ])
+    
+    for p in productos:
+        writer.writerow([
+            p.id_producto,
+            p.producto,
+            p.categoria.categoria if p.categoria else 'Sin categoría',
+            f"{p.precio:.2f}",
+            p.stock,
+            p.descripcion,
+            p.id_usuario
+        ])
+    
+    writer.writerow([])
+    writer.writerow(['RESUMEN DE PRODUCTOS'])
+    writer.writerow([f'Total Productos: {len(productos)}'])
+    
+    categorias = Categoria.query.all()
+    for c in categorias:
+        count = sum(1 for p in productos if p.id_categoria == c.id_categoria)
+        if count > 0:
+            writer.writerow([f'{c.categoria}: {count} productos'])
+    
+    output.seek(0)
+    response = Response(output.getvalue(), mimetype='text/csv')
+    response.headers['Content-Disposition'] = f'attachment; filename=productos_{date.today().strftime("%Y%m%d")}.csv'
+    response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+    
+    return response
 
 @administrador_bp.route("/productos")
 @login_required
@@ -459,3 +643,5 @@ def api_reportes_estadisticas():
         
     except Exception as e:
         return jsonify({"success": False, "message": f"Error interno en la consulta: {str(e)}"}), 500
+    
+

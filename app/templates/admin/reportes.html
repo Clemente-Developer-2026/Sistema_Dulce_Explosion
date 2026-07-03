@@ -35,7 +35,14 @@
             <h5 class="section-title mb-0"><i class="bi bi-collection-fill me-2 text-brand"></i>Reportes de Catálogo e Inventario</h5>
             <span class="text-muted small">Indicadores reales y verificación del volumen físico de almacenamiento</span>
         </div>
-        <button class="btn btn-brand btn-sm" onclick="cargarReportes()"><i class="bi bi-arrow-clockwise me-1"></i> Actualizar Catálogo</button>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-success btn-sm" onclick="exportarReporteCSV()">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Exportar CSV
+            </button>
+            <button class="btn btn-brand btn-sm" onclick="cargarReportes()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+            </button>
+        </div>
     </div>
 
     <div class="row g-3 mb-4">
@@ -65,7 +72,12 @@
     <div class="row g-4">
         <div class="col-lg-7">
             <div class="card card-shadow p-4 bg-white h-100">
-                <h5 class="section-title text-danger mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Verificación de Stock Crítico</h5>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="section-title text-danger mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Verificación de Stock Crítico</h5>
+                    <button class="btn btn-success btn-sm" onclick="exportarStockCriticoCSV()">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Exportar
+                    </button>
+                </div>
                 <p class="text-muted small mb-3">Lista de artículos con 10 o menos existencias físicas en el almacén central.</p>
                 
                 <div class="input-group mb-3">
@@ -74,7 +86,7 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table align-middle table-hover text-center mb-0">
+                    <table class="table align-middle table-hover text-center mb-0" id="tablaStockCritico">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -96,7 +108,12 @@
 
         <div class="col-lg-5">
             <div class="card card-shadow p-4 bg-white h-100">
-                <h5 class="section-title text-brand mb-1"><i class="bi bi-pie-chart-fill me-2"></i>Variedad por Categoría</h5>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="section-title text-brand mb-0"><i class="bi bi-pie-chart-fill me-2"></i>Variedad por Categoría</h5>
+                    <button class="btn btn-success btn-sm" onclick="exportarCategoriasCSV()">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Exportar
+                    </button>
+                </div>
                 <p class="text-muted small mb-3">Distribución de productos registrados agrupados por su clasificación.</p>
                 
                 <ul class="list-group list-group-flush" id="listaCategoriasEstadistica">
@@ -112,7 +129,200 @@
     </div>
 </main>
 
+<style>
+    .card-shadow {
+        box-shadow: 0 8px 24px rgba(0, 40, 80, 0.08);
+        border: none;
+        border-radius: 20px;
+        transition: all 0.2s ease;
+    }
+    .card-shadow:hover {
+        box-shadow: 0 12px 32px rgba(0, 60, 130, 0.12);
+    }
+    .bg-primary-soft {
+        background: #e6f0ff;
+    }
+    .text-brand {
+        color: #0a4b8c;
+    }
+    .btn-brand {
+        background: #0a4b8c;
+        color: white;
+        border-radius: 40px;
+        padding: 0.4rem 1.5rem;
+        font-weight: 500;
+        border: none;
+        transition: 0.2s;
+    }
+    .btn-brand:hover {
+        background: #083b70;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(10, 75, 140, 0.25);
+    }
+    .btn-success {
+        background: #198754;
+        color: white;
+        border-radius: 40px;
+        padding: 0.3rem 1.2rem;
+        font-weight: 500;
+        border: none;
+        transition: 0.2s;
+    }
+    .btn-success:hover {
+        background: #157347;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(25, 135, 84, 0.25);
+    }
+    .section-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #0a3a6a;
+    }
+    .table thead th {
+        background: #e6f0ff;
+        color: #0a3a6a;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 2px solid #c6dbf5;
+    }
+    .table td {
+        vertical-align: middle;
+        font-size: 0.95rem;
+    }
+    .list-group-item {
+        border-color: #e6f0ff;
+        background: transparent;
+    }
+    .badge {
+        font-weight: 500;
+    }
+    .footer-note {
+        color: #5a7fa0;
+        font-size: 0.8rem;
+        border-top: 1px solid #dce8f5;
+        padding-top: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 250px;
+        background: white;
+        box-shadow: 2px 0 12px rgba(0, 40, 80, 0.06);
+        padding: 1.5rem 0;
+        z-index: 1050;
+        transition: transform 0.3s ease;
+        overflow-y: auto;
+        border-right: 1px solid #e6f0ff;
+    }
+    .sidebar-brand {
+        padding: 0 1.5rem 1.5rem;
+        border-bottom: 1px solid #e6f0ff;
+        margin-bottom: 1.5rem;
+    }
+    .sidebar-brand h2 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #0a4b8c;
+        letter-spacing: -0.3px;
+    }
+    .sidebar-brand small {
+        color: #5a7fa0;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .sidebar-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .sidebar-nav li {
+        padding: 0.6rem 1.5rem;
+        margin: 0.2rem 0.8rem;
+        border-radius: 12px;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+    .sidebar-nav li:hover {
+        background: #e6f0ff;
+    }
+    .sidebar-nav li.active {
+        background: #e6f0ff;
+        border-left: 4px solid #0a4b8c;
+    }
+    .sidebar-nav li a {
+        text-decoration: none;
+        color: #0a3a6a;
+        font-weight: 500;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .sidebar-nav li a i {
+        font-size: 1.2rem;
+        color: #3f6fa3;
+        width: 24px;
+        text-align: center;
+    }
+    .sidebar-nav li.active a i,
+    .sidebar-nav li:hover a i {
+        color: #0a4b8c;
+    }
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.3);
+        z-index: 1040;
+    }
+    .sidebar-overlay.active {
+        display: block;
+    }
+    .main-content {
+        margin-left: 270px;
+        padding: 0 1.5rem 2rem;
+    }
+
+    @media (max-width: 992px) {
+        .sidebar {
+            transform: translateX(-100%);
+            width: 280px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .main-content {
+            margin-left: 0;
+            padding: 0 1rem 1.5rem;
+        }
+    }
+</style>
+
 <script>
+    // ============================================================
+    // VARIABLES GLOBALES PARA EXPORTACIÓN
+    // ============================================================
+    let datosReporte = {
+        alertas_stock: [],
+        categorias_estadistica: [],
+        catalogo_kpis: {}
+    };
+
+    // ============================================================
+    // CARGAR REPORTES
+    // ============================================================
     function cargarReportes() {
         const busqueda = document.getElementById('buscadorReporte').value;
 
@@ -120,6 +330,9 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
+                    // Guardar datos para exportación
+                    datosReporte = data;
+                    
                     document.getElementById('kpiTotalProductos').textContent = `${data.catalogo_kpis.total_productos} Productos`;
                     document.getElementById('kpiTotalStock').textContent = `${data.catalogo_kpis.total_stock_fisico} unidades`;
                     document.getElementById('kpiAlertas').textContent = data.total_alertas;
@@ -144,19 +357,183 @@
 
                     const listaCat = document.getElementById('listaCategoriasEstadistica');
                     listaCat.innerHTML = '';
-                    data.categorias_estadistica.forEach(c => {
-                        listaCat.innerHTML += `
-                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                <span class="fw-semibold text-muted"><i class="bi bi-tag-fill me-2 text-brand"></i>${c.categoria}</span>
-                                <span class="badge bg-primary-soft text-brand rounded-pill px-3 py-2 fw-bold">${c.total_productos} productos</span>
-                            </li>
-                        `;
-                    });
+                    if (data.categorias_estadistica.length === 0) {
+                        listaCat.innerHTML = `<li class="list-group-item text-muted py-3 text-center">No hay categorías registradas</li>`;
+                    } else {
+                        data.categorias_estadistica.forEach(c => {
+                            listaCat.innerHTML += `
+                                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                    <span class="fw-semibold text-muted"><i class="bi bi-tag-fill me-2 text-brand"></i>${c.categoria}</span>
+                                    <span class="badge bg-primary-soft text-brand rounded-pill px-3 py-2 fw-bold">${c.total_productos} productos</span>
+                                </li>
+                            `;
+                        });
+                    }
                 }
             })
             .catch(err => console.error("Error al recuperar JSON:", err));
     }
 
-    document.addEventListener('DOMContentLoaded', cargarReportes);
+    // ============================================================
+    // EXPORTAR REPORTE COMPLETO A CSV
+    // ============================================================
+    function exportarReporteCSV() {
+        const fecha = new Date().toLocaleDateString('es-BO');
+        const hora = new Date().toLocaleTimeString('es-BO');
+        
+        let csvLines = [];
+        
+        // Encabezado del reporte
+        csvLines.push(`"REPORTE DE CATÁLOGO E INVENTARIO"`);
+        csvLines.push(`"Fecha de generación: ${fecha} ${hora}"`);
+        csvLines.push(``);
+        
+        // KPIs
+        csvLines.push(`"=== INDICADORES CLAVE ==="`);
+        csvLines.push(`"Total Productos: ${datosReporte.catalogo_kpis?.total_productos || 0}"`);
+        csvLines.push(`"Total Stock Físico: ${datosReporte.catalogo_kpis?.total_stock_fisico || 0} unidades"`);
+        csvLines.push(`"Total Categorías: ${datosReporte.catalogo_kpis?.total_categorias || 0}"`);
+        csvLines.push(`"Alertas de Stock Crítico: ${datosReporte.total_alertas || 0}"`);
+        csvLines.push(``);
+        
+        // Stock crítico
+        csvLines.push(`"=== PRODUCTOS CON STOCK CRÍTICO (≤ 10 unidades) ==="`);
+        csvLines.push(`"ID";"Producto";"Categoría";"Stock";"Precio (Bs)"`);
+        
+        if (datosReporte.alertas_stock && datosReporte.alertas_stock.length > 0) {
+            datosReporte.alertas_stock.forEach(p => {
+                csvLines.push(`"${p.id_producto}";"${p.producto}";"${p.categoria}";"${p.stock}";"${p.precio.toFixed(2)}"`);
+            });
+        } else {
+            csvLines.push(`"No hay productos con stock crítico"`);
+        }
+        csvLines.push(``);
+        
+        // Categorías
+        csvLines.push(`"=== DISTRIBUCIÓN POR CATEGORÍA ==="`);
+        csvLines.push(`"Categoría";"Total Productos"`);
+        
+        if (datosReporte.categorias_estadistica && datosReporte.categorias_estadistica.length > 0) {
+            datosReporte.categorias_estadistica.forEach(c => {
+                csvLines.push(`"${c.categoria}";"${c.total_productos}"`);
+            });
+        } else {
+            csvLines.push(`"No hay categorías registradas"`);
+        }
+        
+        // Pie de página
+        csvLines.push(``);
+        csvLines.push(`"Reporte generado por Dulce Explosion - Administración"`);
+        csvLines.push(`"© ${new Date().getFullYear()} Dulce Explosion"`);
+        
+        descargarCSV(csvLines.join('\n'), `reporte_completo_${new Date().toISOString().slice(0,10)}.csv`);
+    }
+
+    // ============================================================
+    // EXPORTAR STOCK CRÍTICO A CSV
+    // ============================================================
+    function exportarStockCriticoCSV() {
+        const fecha = new Date().toLocaleDateString('es-BO');
+        
+        let csvLines = [];
+        
+        csvLines.push(`"STOCK CRÍTICO - PRODUCTOS CON ≤ 10 UNIDADES"`);
+        csvLines.push(`"Fecha: ${fecha}"`);
+        csvLines.push(``);
+        csvLines.push(`"ID";"Producto";"Categoría";"Stock";"Precio (Bs)"`);
+        
+        if (datosReporte.alertas_stock && datosReporte.alertas_stock.length > 0) {
+            datosReporte.alertas_stock.forEach(p => {
+                csvLines.push(`"${p.id_producto}";"${p.producto}";"${p.categoria}";"${p.stock}";"${p.precio.toFixed(2)}"`);
+            });
+        } else {
+            csvLines.push(`"No hay productos con stock crítico"`);
+        }
+        
+        csvLines.push(``);
+        csvLines.push(`"Total de productos críticos: ${datosReporte.alertas_stock?.length || 0}"`);
+        csvLines.push(`"© ${new Date().getFullYear()} Dulce Explosion"`);
+        
+        descargarCSV(csvLines.join('\n'), `stock_critico_${new Date().toISOString().slice(0,10)}.csv`);
+    }
+
+    // ============================================================
+    // EXPORTAR CATEGORÍAS A CSV
+    // ============================================================
+    function exportarCategoriasCSV() {
+        const fecha = new Date().toLocaleDateString('es-BO');
+        
+        let csvLines = [];
+        
+        csvLines.push(`"DISTRIBUCIÓN DE PRODUCTOS POR CATEGORÍA"`);
+        csvLines.push(`"Fecha: ${fecha}"`);
+        csvLines.push(``);
+        csvLines.push(`"Categoría";"Total Productos"`);
+        
+        if (datosReporte.categorias_estadistica && datosReporte.categorias_estadistica.length > 0) {
+            datosReporte.categorias_estadistica.forEach(c => {
+                csvLines.push(`"${c.categoria}";"${c.total_productos}"`);
+            });
+        } else {
+            csvLines.push(`"No hay categorías registradas"`);
+        }
+        
+        const total = datosReporte.categorias_estadistica?.reduce((sum, c) => sum + c.total_productos, 0) || 0;
+        csvLines.push(``);
+        csvLines.push(`"Total de productos: ${total}"`);
+        csvLines.push(`"© ${new Date().getFullYear()} Dulce Explosion"`);
+        
+        descargarCSV(csvLines.join('\n'), `categorias_${new Date().toISOString().slice(0,10)}.csv`);
+    }
+
+    // ============================================================
+    // FUNCIÓN PARA DESCARGAR CSV
+    // ============================================================
+    function descargarCSV(contenido, nombreArchivo) {
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + contenido], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', nombreArchivo);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // ============================================================
+    // TOGGLE SIDEBAR
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggleBtn = document.getElementById('sidebarToggle');
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+        }
+
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 992) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        cargarReportes();
+    });
 </script>
 {% endblock %}
